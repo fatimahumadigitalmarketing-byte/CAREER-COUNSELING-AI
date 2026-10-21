@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Careerly AI - Education & Career Counselor for Pakistan</title>
+  <meta name="description" content="AI career and education guidance for Pakistani students from Matric to University and NAVTTC vocational skills.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    (function() {
+      try {
+        var origFetch = window.fetch;
+        Object.defineProperty(window, 'fetch', {
+          configurable: true,
+          enumerable: true,
+          get: function() { return origFetch; },
+          set: function(val) { origFetch = val; }
+        });
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="logo-brand">
+        <span class="logo-mark">⚡</span>
+        <span class="logo-text">Careerly AI</span>
+      </a>
+
+      <nav class="site-nav">
+        <a href="#intake-form-section" class="nav-link" data-i18n="nav_form">Intake Questionnaire</a>
+        <a href="#how-it-works" class="nav-link" data-i18n="nav_how">How It Works</a>
+        <a href="#stages" class="nav-link" data-i18n="nav_stages">Education Stages</a>
+        <a href="#chat-section" class="nav-link" data-i18n="nav_chat">Chat Counselor</a>
+      </nav>
+
+      <div class="lang-switch-wrapper">
+        <button id="lang-toggle-btn" class="lang-toggle-btn" aria-label="Toggle language between English and Urdu">
+          <span class="lang-badge">UR / EN</span>
+          <span id="current-lang-label" class="lang-text">اردو</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="hero-tag" data-i18n="hero_tag">Verified Pakistan Education & NAVTTC Counselor</div>
+        <h1 class="hero-title" data-i18n="hero_title">Find Your True Direction in Matric, College, & Beyond</h1>
+        <p class="hero-subtitle" data-i18n="hero_desc">
+          Honest, data-grounded career counseling. Works like an intake form: answer 5 quick questions, and get 100% accurate recommendations based on verified eligibility rules.
+        </p>
+        <div class="hero-actions">
+          <a href="#intake-form-section" class="btn btn-yellow" data-i18n="hero_btn_form">Start Intake Questionnaire</a>
+          <a href="#chat-section" class="btn btn-outline" data-i18n="hero_btn_chat">Open Chat</a>
+        </div>
+      </div>
+      <div class="hero-image-wrap">
+        <div class="image-fallback-container">
+          <img src="images/hero.jpg" alt="Pakistani students studying and exploring career paths" class="cover-image" onerror="this.remove()">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GOOGLE FORM STYLE INTAKE QUESTIONNAIRE SECTION -->
+  <section id="intake-form-section" class="section form-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="form_tag">Structured Intake Questionnaire</span>
+        <h2 class="section-title" data-i18n="form_title">Answer 5 Questions for 100% Accurate Guidance</h2>
+        <p class="section-desc" data-i18n="form_desc">
+          Just like a Google Form: your responses are checked against PMDC, PEC, HEC & NAVTTC requirements to produce an exact roadmap.
+        </p>
+      </div>
+
+      <div class="form-wizard-card">
+        <!-- Progress Bar -->
+        <div class="wizard-progress-header">
+          <div class="wizard-header-flex">
+            <span id="wizard-step-title" class="wizard-step-title">Step 1 of 5: Current Education Stage</span>
+            <span id="wizard-progress-percent" class="wizard-percent-badge">20% Complete</span>
+          </div>
+          <div class="progress-bar-track">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 20%;"></div>
+          </div>
+        </div>
+
+        <!-- Wizard Step Containers -->
+        <div class="wizard-body">
+          <!-- STEP 1: STAGE -->
+          <div id="step-1" class="wizard-step-pane active">
+            <h3 class="step-question" data-i18n="q1_title">1. What is your current education stage?</h3>
+            <p class="step-hint" data-i18n="q1_hint">Select your current level so we check relevant admissions eligibility:</p>
+            <div class="options-grid">
+              <label class="option-card">
+                <input type="radio" name="stage" value="matric">
+                <div class="option-content">
+                  <span class="option-name">Matriculation (9th / 10th Grade)</span>
+                  <span class="option-desc">Matric Science, Computer Science, or Arts group</span>
+                </div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="stage" value="intermediate">
+                <div class="option-content">
+                  <span class="option-name">FSc / Intermediate / A-Levels</span>
+                  <span class="option-desc">College 11th & 12th (Pre-Medical, Pre-Engineering, ICS, I.Com, FA)</span>
+                </div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="stage" value="university">
+                <div class="option-content">
+                  <span class="option-name">University Undergraduate</span>
+                  <span class="option-desc">Currently enrolled in a 4-year BS or Bachelor's program</span>
+                </div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="stage" value="graduate">
+                <div class="option-content">
+                  <span class="option-name">Graduate / Out-of-School Youth</span>
+                  <span class="option-desc">Finished studies or seeking fast practical NAVTTC trade skills</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- STEP 2: STREAM & SUBJECTS -->
+          <div id="step-2" class="wizard-step-pane">
+            <h3 class="step-question" data-i18n="q2_title">2. What is your academic stream & group?</h3>
+            <p class="step-hint" data-i18n="q2_hint">Required for PMDC, PEC, and NAVTTC hard eligibility verification:</p>
+            <div id="stream-options-container" class="options-grid">
+              <!-- Dynamically populated based on stage -->
+            </div>
+          </div>
+
+          <!-- STEP 3: ACADEMIC MARKS -->
+          <div id="step-3" class="wizard-step-pane">
+            <h3 class="step-question" data-i18n="q3_title">3. What is your approximate percentage or grade?</h3>
+            <p class="step-hint" data-i18n="q3_hint">Helps verify competitive cutoffs (PMDC requires 60%+ for MBBS):</p>
+            <div class="options-grid">
+              <label class="option-card">
+                <input type="radio" name="marks" value="above_80">
+                <div class="option-content">
+                  <span class="option-name">Above 80% (Grade A-1 / First Division)</span>
+                  <span class="option-desc">Eligible for competitive merit seats and scholarships</span>
+                </div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="marks" value="65_80">
+                <div class="option-content">
+                  <span class="option-name">65% – 80% (Grade A / B)</span>
+                  <span class="option-desc">Eligible for computing, business degrees and high-level diplomas</span>
+                </div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="marks" value="50_64">
+                <div class="option-content">
+                  <span class="option-name">50% – 64% (Grade C / Second Division)</span>
+                  <span class="option-desc">Strong candidate for NAVTTC high-growth vocational training</span>
+                </div>
+              </label>
+              <label class="option-card">
+                <input type="radio" name="marks" value="below_50">
+                <div class="option-content">
+                  <span class="option-name">Below 50% / Awaiting Results</span>
+                  <span class="option-desc">Target 3-6 month trade courses and freelancing tracks</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- STEP 4: RIASEC INTERESTS -->
+          <div id="step-4" class="wizard-step-pane">
+            <h3 class="step-question" data-i18n="q4_title">4. What activities do you genuinely enjoy? (Holland RIASEC)</h3>
+            <p class="step-hint" data-i18n="q4_hint">Pick 1 or 2 options that reflect your natural curiosity and aptitude:</p>
+            <div class="options-grid">
+              <label class="option-card checkbox-card">
+                <input type="checkbox" name="riasec" value="investigative">
+                <div class="option-content">
+                  <span class="option-name">💻 Software Coding, Math & Logic</span>
+                  <span class="option-desc">Investigative: programming, analytical problem solving, data</span>
+                </div>
+              </label>
+              <label class="option-card checkbox-card">
+                <input type="checkbox" name="riasec" value="artistic">
+                <div class="option-content">
+                  <span class="option-name">🎨 Graphic Design, UI/UX & Media</span>
+                  <span class="option-desc">Artistic: Figma UI design, branding, visuals, media creation</span>
+                </div>
+              </label>
+              <label class="option-card checkbox-card">
+                <input type="checkbox" name="riasec" value="realistic">
+                <div class="option-content">
+                  <span class="option-name">⚡ Solar Tech & Electrical Hardware</span>
+                  <span class="option-desc">Realistic: tools, equipment, solar panels, electronics</span>
+                </div>
+              </label>
+              <label class="option-card checkbox-card">
+                <input type="checkbox" name="riasec" value="enterprising">
+                <div class="option-content">
+                  <span class="option-name">📈 Digital Marketing, E-Commerce & Agency</span>
+                  <span class="option-desc">Enterprising: freelancing clients, Daraz sales, marketing campaigns</span>
+                </div>
+              </label>
+              <label class="option-card checkbox-card">
+                <input type="checkbox" name="riasec" value="social">
+                <div class="option-content">
+                  <span class="option-name">🩺 Healthcare & Patient Support</span>
+                  <span class="option-desc">Social: clinical support, patient care, helping people</span>
+                </div>
+              </label>
+              <label class="option-card checkbox-card">
+                <input type="checkbox" name="riasec" value="conventional">
+                <div class="option-content">
+                  <span class="option-name">📊 Financial Accounts & Administration</span>
+                  <span class="option-desc">Conventional: bookkeeping, auditing, structured business data</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- STEP 5: CITY & BUDGET -->
+          <div id="step-5" class="wizard-step-pane">
+            <h3 class="step-question" data-i18n="q5_title">5. What is your city and financial budget preference?</h3>
+            <p class="step-hint" data-i18n="q5_hint">Ensures we match nearby institute campuses and respect your financial reality:</p>
+
+            <div class="form-sub-block">
+              <label class="sub-label" data-i18n="lbl_city">Select City in Pakistan:</label>
+              <div class="city-chips-grid">
+                <label class="city-chip"><input type="radio" name="city" value="Lahore"><span>Lahore</span></label>
+                <label class="city-chip"><input type="radio" name="city" value="Karachi"><span>Karachi</span></label>
+                <label class="city-chip"><input type="radio" name="city" value="Islamabad"><span>Islamabad</span></label>
+                <label class="city-chip"><input type="radio" name="city" value="Peshawar"><span>Peshawar</span></label>
+                <label class="city-chip"><input type="radio" name="city" value="Quetta"><span>Quetta</span></label>
+                <label class="city-chip"><input type="radio" name="city" value="Other"><span>Other / Rural</span></label>
+              </div>
+            </div>
+
+            <div class="form-sub-block">
+              <label class="sub-label" data-i18n="lbl_budget">Financial Budget & Timeline:</label>
+              <div class="options-grid">
+                <label class="option-card">
+                  <input type="radio" name="budget" value="free_stipend">
+                  <div class="option-content">
+                    <span class="option-name">Government Subsidized / Tuition Fee Waiver</span>
+                    <span class="option-desc">NAVTTC / TEVTA subsidized programs with potential institutional assistance</span>
+                  </div>
+                </label>
+                <label class="option-card">
+                  <input type="radio" name="budget" value="immediate_earning">
+                  <div class="option-content">
+                    <span class="option-name">Short-Duration Vocational Training (3 to 6 Months)</span>
+                    <span class="option-desc">Rapid workforce preparation through certified vocational skills</span>
+                  </div>
+                </label>
+                <label class="option-card">
+                  <input type="radio" name="budget" value="low_budget">
+                  <div class="option-content">
+                    <span class="option-name">Low-Cost / Budget-Friendly Training</span>
+                    <span class="option-desc">Affordable short technical & digital skills courses</span>
+                  </div>
+                </label>
+                <label class="option-card">
+                  <input type="radio" name="budget" value="standard_degree">
+                  <div class="option-content">
+                    <span class="option-name">Standard University Fee (HEC 4-Year Degree)</span>
+                    <span class="option-desc">BS Degree at recognized public or semi-govt university</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wizard Navigation Buttons -->
+        <div class="wizard-footer">
+          <button id="wizard-prev-btn" class="btn btn-outline-dark" style="display: none;" data-i18n="btn_back">← Back</button>
+          <div style="flex-grow: 1;"></div>
+          <button id="wizard-next-btn" class="btn btn-yellow" disabled data-i18n="btn_next">Next Step →</button>
+          <button id="wizard-submit-btn" class="btn btn-yellow" style="display: none;" data-i18n="btn_submit">⚡ Process & Generate Accurate Advice</button>
+        </div>
+      </div>
+
+      <!-- RESULTS CONTAINER (APPEARS AFTER QUESTIONNAIRE IS SUBMITTED) -->
+      <div id="results-display" class="results-display" style="display: none;">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="section how-it-works-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="how_tag">A Proven 3-Step Process</span>
+        <h2 class="section-title" data-i18n="how_title">How Careerly AI Guides You</h2>
+        <p class="section-desc" data-i18n="how_subtitle">Personalized analysis respecting your budget, academic marks, and aspirations across Pakistan.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <h3 class="step-heading" data-i18n="step_1_title">Assess</h3>
+          <p class="step-text" data-i18n="step_1_text">Structured questions mapping your RIASEC interest types, favorite subjects, local city, and family expectations without asking for personal IDs.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <h3 class="step-heading" data-i18n="step_2_title">Match</h3>
+          <p class="step-text" data-i18n="step_2_text">Retrieval against verified database records and code-enforced PMDC, PEC, HEC & NAVTTC eligibility rules categorized into Strong Fit, Possible, and Not Right Now.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <h3 class="step-heading" data-i18n="step_3_title">Guide</h3>
+          <p class="step-text" data-i18n="step_3_text">A 3-phase concrete roadmap covering skill gaps, portfolio projects, institute deadlines, and respectful summaries for your family.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Four Education Stages Cards -->
+  <section id="stages" class="section stages-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag" data-i18n="stages_tag">Guidance for Every Stage</span>
+        <h2 class="section-title" data-i18n="stages_title">Where Are You in Your Journey?</h2>
+        <p class="section-desc" data-i18n="stages_subtitle">Pick your stage to jump directly into the questionnaire or chat.</p>
+      </div>
+
+      <div class="stages-grid">
+        <!-- Card 1: Matric -->
+        <div class="stage-card" data-stage="Matric">
+          <div class="stage-card-image-wrap">
+            <div class="image-fallback-container">
+              <img src="images/matric.jpg" alt="Matriculation students in Pakistan" class="stage-image" onerror="this.remove()">
+            </div>
+          </div>
+          <div class="stage-card-body">
+            <span class="stage-badge" data-i18n="badge_matric">Grade 9 & 10</span>
+            <h3 class="stage-card-title" data-i18n="card_matric_title">Matriculation</h3>
+            <p class="stage-card-desc" data-i18n="card_matric_desc">
+              Choose between Science (Biology or Computer Science), Arts, Technical streams, or fast-track 3-month NAVTTC vocational diplomas.
+            </p>
+            <button class="stage-action-btn" data-stage-val="matric" data-i18n="btn_consult_matric">Fill Form for Matric →</button>
+          </div>
+        </div>
+
+        <!-- Card 2: FSc and A-Levels -->
+        <div class="stage-card" data-stage="FSc">
+          <div class="stage-card-image-wrap">
+            <div class="image-fallback-container">
+              <img src="images/intermediate.jpg" alt="Intermediate college students" class="stage-image" onerror="this.remove()">
+            </div>
+          </div>
+          <div class="stage-card-body">
+            <span class="stage-badge" data-i18n="badge_fsc">Intermediate / 12th</span>
+            <h3 class="stage-card-title" data-i18n="card_fsc_title">FSc & A-Levels</h3>
+            <p class="stage-card-desc" data-i18n="card_fsc_desc">
+              Evaluate Pre-Medical vs Pre-Engineering, ICS, I.Com, university entry test strategies (MDCAT, ECAT, NTS), or IT skills tracks.
+            </p>
+            <button class="stage-action-btn" data-stage-val="intermediate" data-i18n="btn_consult_fsc">Fill Form for College →</button>
+          </div>
+        </div>
+
+        <!-- Card 3: University -->
+        <div class="stage-card" data-stage="University">
+          <div class="stage-card-image-wrap">
+            <div class="image-fallback-container">
+              <img src="images/university.jpg" alt="University campus students" class="stage-image" onerror="this.remove()">
+            </div>
+          </div>
+          <div class="stage-card-body">
+            <span class="stage-badge" data-i18n="badge_uni">Undergraduate</span>
+            <h3 class="stage-card-title" data-i18n="card_uni_title">University Degree</h3>
+            <p class="stage-card-desc" data-i18n="card_uni_desc">
+              Identify high-growth specializations in Software Engineering, Cloud, Business, AI, or Healthcare, plus internship preparation.
+            </p>
+            <button class="stage-action-btn" data-stage-val="university" data-i18n="btn_consult_uni">Fill Form for University →</button>
+          </div>
+        </div>
+
+        <!-- Card 4: Graduates and Skills -->
+        <div class="stage-card" data-stage="Skills">
+          <div class="stage-card-image-wrap">
+            <div class="image-fallback-container">
+              <img src="images/skills.jpg" alt="Graduates and vocational training students" class="stage-image" onerror="this.remove()">
+            </div>
+          </div>
+          <div class="stage-card-body">
+            <span class="stage-badge" data-i18n="badge_skills">Graduates & Youth</span>
+            <h3 class="stage-card-title" data-i18n="card_skills_title">Graduates & Skills</h3>
+            <p class="stage-card-desc" data-i18n="card_skills_desc">
+              Upskill through government-funded NAVTTC & Kamyab Jawan certified courses, freelance marketplaces, or renewable solar trades.
+            </p>
+            <button class="stage-action-btn" data-stage-val="graduate" data-i18n="btn_consult_skills">Fill Form for Skills →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Chat Counselor Section -->
+  <section id="chat-section" class="section chat-section">
+    <div class="container">
+      <div class="chat-wrapper">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="counselor-avatar">⚡</div>
+            <div>
+              <h2 class="chat-counselor-name">Careerly AI Counselor</h2>
+              <p class="chat-status-text" data-i18n="chat_status">Verified Database & Deterministic Eligibility Active</p>
+            </div>
+          </div>
+          <button id="reset-chat-btn" class="btn-chat-reset" title="Start new conversation" data-i18n="btn_reset">New Session</button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages-container" aria-live="polite">
+          <!-- Bot and user bubbles are appended here -->
+        </div>
+
+        <div id="typing-indicator" class="typing-indicator" style="display: none;">
+          <div class="typing-bubble">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+
+        <div id="chat-error-banner" class="chat-error-banner" style="display: none;">
+          <span class="error-icon">⚠️</span>
+          <span id="chat-error-text" class="error-msg">Connection issue. Please retry in a few seconds.</span>
+        </div>
+
+        <form id="chat-form" class="chat-input-bar">
+          <input 
+            type="text" 
+            id="chat-input" 
+            class="chat-input-field" 
+            placeholder="Type your message in English, اردو, or Roman Urdu..." 
+            autocomplete="off" 
+            maxlength="2000"
+            required
+          />
+          <button type="submit" id="chat-send-btn" class="btn btn-yellow btn-send" aria-label="Send message">
+            <span class="send-text" data-i18n="btn_send">Send</span>
+            <span class="send-icon">➤</span>
+          </button>
+        </form>
+
+        <p class="chat-disclaimer" data-i18n="disclaimer">
+          Guidance only. Always confirm fees, dates and eligibility with the institute.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="logo-mark">⚡</span>
+        <span class="logo-text">Careerly AI</span>
+        <p class="footer-mission" data-i18n="footer_mission">
+          Empowering Pakistani students across all provinces with transparent, verified educational roadmaps and vocational opportunities.
+        </p>
+      </div>
+
+      <div class="footer-links-col">
+        <h4 data-i18n="footer_resources">Resources</h4>
+        <ul>
+          <li><a href="https://navttc.gov.pk" target="_blank" rel="noopener">NAVTTC Official</a></li>
+          <li><a href="https://www.hec.gov.pk" target="_blank" rel="noopener">HEC Recognized Degrees</a></li>
+          <li><a href="https://pmdc.pk" target="_blank" rel="noopener">PMDC Medical Criteria</a></li>
+          <li><a href="https://pec.org.pk" target="_blank" rel="noopener">PEC Engineering Standards</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-bottom">
+        <p data-i18n="footer_copy">© 2026 Careerly AI. Free guidance for Pakistan students. All course facts verified from official catalogs.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

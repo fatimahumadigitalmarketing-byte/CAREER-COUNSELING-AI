@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --green: #12593A;
+  --green-dark: #0C3F29;
+  --green-soft: #E4EFE9;
+  --yellow: #EBDA15;
+  --bg: #F8F8F8;
+  --text: #1F2A24;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+[dir="rtl"] {
+  font-family: var(--font-urdu), var(--font-sans);
+  line-height: 2.1;
+}
+
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] p,
+[dir="rtl"] button,
+[dir="rtl"] input {
+  font-family: var(--font-urdu), serif;
+}
+
+/* Yellow Button Rule:
+   Yellow is used ONLY as a button fill with green text, or on dark green.
+   Never as text on a white background. */
+.btn-yellow-action {
+  background-color: #EBDA15;
+  color: #0C3F29;
+  font-weight: 700;
+}
+.btn-yellow-action:hover {
+  filter: brightness(1.05);
+}

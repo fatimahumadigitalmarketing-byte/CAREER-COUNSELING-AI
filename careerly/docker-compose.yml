@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: careerly_db
+    restart: always
+    environment:
+      POSTGRES_USER: careerly_user
+      POSTGRES_PASSWORD: careerly_password
+      POSTGRES_DB: careerly_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: careerly_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://careerly_user:careerly_password@db:5432/careerly_db
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+      - EMBEDDING_DIM=384
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

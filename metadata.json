@@ -1,0 +1,6 @@
+{
+  "name": "Careerly AI",
+  "description": "AI career and education counselor for students in Pakistan across Matric, Intermediate, University, and Vocational paths.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

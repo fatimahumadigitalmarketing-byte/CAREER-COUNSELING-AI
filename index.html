@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Careerly AI</title>
+    <meta name="description" content="AI career and education counselor for students in Pakistan across Matric, Intermediate, University, and Vocational paths." />
+    <meta property="og:title" content="Careerly AI" />
+    <meta property="og:description" content="AI career and education counselor for students in Pakistan across Matric, Intermediate, University, and Vocational paths." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      // Ensure window.fetch has a defined setter so iframe extensions (frame_ant) can wrap window.fetch without throwing
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return originalFetch;
+            },
+            set: function(newFetch) {
+              originalFetch = newFetch;
+            }
+          });
+        } catch (e) {
+          // ignore
+        }
+
+        try {
+          var originalXHR = window.XMLHttpRequest;
+          Object.defineProperty(window, 'XMLHttpRequest', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return originalXHR;
+            },
+            set: function(newXHR) {
+              originalXHR = newXHR;
+            }
+          });
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
