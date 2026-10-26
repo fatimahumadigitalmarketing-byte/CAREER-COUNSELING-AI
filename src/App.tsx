@@ -116,7 +116,8 @@ import matricImg from "./assets/images/matric_1791450034883.jpg";
 import intermediateImg from "./assets/images/intermediate_1791450053230.jpg";
 import universityImg from "./assets/images/university_1791450073511.jpg";
 import skillsImg from "./assets/images/skills_1791450093807.jpg";
-import { DocumentPreviewModal } from "./components/DocumentPreviewModal";
+import { DocumentPreviewModal, DocumentAnnotation } from "./components/DocumentPreviewModal";
+import { CareerTrendsView } from "./components/CareerTrendsView";
 
 interface Message {
   role: "user" | "assistant";
@@ -163,11 +164,14 @@ export interface StudentDocument {
   gradeOrMarks?: string;
   detectedSubjects?: string[];
   rawTextPreview?: string;
+  annotations?: DocumentAnnotation[];
 }
 
 interface QuestionnaireState {
   stage: string;
   stream: string;
+  currentEducation?: string;
+  ongoingJobOrInternship?: string;
   strongSubjects: string[];
   avoidSubjects: string[];
   hobbies: string[];
@@ -182,7 +186,7 @@ interface QuestionnaireState {
 interface ProgramRecord {
   id: number;
   name: string;
-  type: "navttc_course" | "degree" | "diploma";
+  type: "navttc_course" | "degree" | "diploma" | "university_degree";
   sector: string;
   nvqf_level?: number;
   duration_months: number;
@@ -231,346 +235,925 @@ interface SavedSession {
 }
 
 // 10 Verified Sample NAVTTC Courses & Career Tracks (Advisory Guidance - No exact figures)
+// Comprehensive Verified Academic Degree & Vocational Programs across Pakistan (Advisory Guidance - No exact figures)
 const SAMPLE_PROGRAMS: ProgramRecord[] = [
   {
     id: 1,
+    name: "BS Computer Science & Artificial Intelligence (HEC Benchmark)",
+    type: "university_degree",
+    sector: "Information Technology",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "Higher Education Degree / HEC Need-Based & Ehsaas Scholarships Available (Fee vouchers determined by university)",
+    min_education: "intermediate",
+    allowed_streams: ["ics", "pre_engineering", "computer_it", "matric_science_cs"],
+    entry_requirement: "ICS (Math/Stats/Physics) or FSc Pre-Engineering with minimum 50% marks",
+    city: "Islamabad, Lahore, Karachi, Peshawar",
+    institute: "[BENCHMARK] FAST-NUCES, NUST SEECS, COMSATS, ITU Lahore",
+    source_url: "https://hec.gov.pk/curriculum/computer-science",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Object-Oriented Programming (C++, Java, Python)",
+      "Data Structures, Algorithms & Computational Complexity",
+      "Machine Learning, Neural Networks & Generative AI",
+      "Database Systems (SQL & NoSQL) & Cloud Architecture",
+      "Discrete Mathematics, Linear Algebra & Probability"
+    ],
+    job_opportunities: [
+      "Software Engineer / Backend Developer",
+      "AI & Machine Learning Engineer",
+      "Data Scientist / Analytics Specialist",
+      "High-Growth Startup Tech Co-Founder"
+    ],
+    career_prospect: "Top tier salary growth across domestic software houses and global remote companies. Merit requires intense logic and daily coding.",
+    when_to_choose: "Choose if you love solving logical algorithms, building software products, and enjoy mathematical reasoning.",
+    when_not_to_choose: "Do not choose if you want to avoid mathematics or dislike sitting at a computer screen debugging code.",
+    riasec_match: ["investigative", "conventional"],
+    hobbies_match: ["gaming_tech", "puzzles_logic", "reading_research"]
+  },
+  {
+    id: 2,
+    name: "BS Nursing & Healthcare Sciences (PNC / HEC Accredited)",
+    type: "university_degree",
+    sector: "Allied Healthcare",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "Hospital-Affiliated Degree / Full Tuition Waivers & Monthly Clinical Allowance Often Provided in Teaching Hospitals",
+    min_education: "intermediate",
+    allowed_streams: ["pre_medical", "biological_healthcare", "matric_science_bio"],
+    entry_requirement: "FSc Pre-Medical (Biology, Chemistry, Physics) with minimum 50% marks",
+    city: "Karachi, Lahore, Rawalpindi, Peshawar, Quetta",
+    institute: "[BENCHMARK] Aga Khan University (AKU), King Edward Medical University, Shifa Tameer-e-Millat, Dow University",
+    source_url: "https://pnc.org.pk",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Advanced Clinical Patient Care & Vital Signs Monitoring",
+      "Pharmacology, Drug Administration & Dosage Calculations",
+      "Infection Control, Sterile Protocols & Operating Room Assisting",
+      "Critical Care Nursing (ICU / CCU) & Trauma Triage",
+      "Empathetic Communication & Electronic Health Records (EHR)"
+    ],
+    job_opportunities: [
+      "Registered Nurse (RN) in Leading Hospitals",
+      "ICU / Emergency Room Clinical Specialist",
+      "Healthcare Administrator / Nurse Supervisor",
+      "International Healthcare Practitioner (NCLEX / UK NMC pathway)"
+    ],
+    career_prospect: "Extremely high global and local demand with near 100% employment rate post-graduation in reputed tertiary hospitals.",
+    when_to_choose: "Choose if you have deep empathy, desire to heal and comfort patients, and want a respected clinical healthcare career without waiting for high-cost private medical colleges.",
+    when_not_to_choose: "Do not choose if you cannot handle hospital shift work, blood, or demanding physical ward routines.",
+    riasec_match: ["social", "investigative"],
+    hobbies_match: ["helping_health_firstaid", "reading_research"]
+  },
+  {
+    id: 3,
+    name: "BS Software Engineering & Cloud Infrastructure (PEC / HEC)",
+    type: "university_degree",
+    sector: "Information Technology",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "Accredited University Degree / HEC Need-Based & National Endowment Scholarships",
+    min_education: "intermediate",
+    allowed_streams: ["pre_engineering", "ics", "engineering_applied", "computer_it"],
+    entry_requirement: "FSc Pre-Engineering or ICS with minimum 50% marks",
+    city: "Islamabad, Lahore, Karachi, Taxila",
+    institute: "[BENCHMARK] NUST, FAST-NUCES, UET Lahore, GIKI Swabi",
+    source_url: "https://hec.gov.pk/curriculum/software-engineering",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Software Architecture, Clean Code & Design Patterns",
+      "Full-Stack Web & Mobile Ecosystems (React, Node, Go)",
+      "DevOps Automation, Docker Containers & Cloud Services (AWS/GCP)",
+      "Agile Project Management & Software Quality Assurance (SQA)",
+      "System Scalability & Microservices Engineering"
+    ],
+    job_opportunities: [
+      "Software Engineering Associate",
+      "Cloud Architect / DevOps Engineer",
+      "Full-Stack Product Developer",
+      "Overseas Tech Consultant"
+    ],
+    career_prospect: "Dominant export industry in Pakistan. Tech companies pay competitive compensation based on project portfolios.",
+    when_to_choose: "Choose if you like designing scalable applications, building systems from scratch, and coordinating software teams.",
+    when_not_to_choose: "Do not choose if you prefer non-technical outdoor work or dislike continuous technical learning.",
+    riasec_match: ["investigative", "realistic"],
+    hobbies_match: ["gaming_tech", "puzzles_logic", "tinkering_hardware"]
+  },
+  {
+    id: 4,
+    name: "Doctor of Physical Therapy (DPT) & Medical Rehabilitation",
+    type: "university_degree",
+    sector: "Allied Healthcare",
+    nvqf_level: 6,
+    duration_months: 60,
+    financial_model: "5-Year Professional Clinical Degree / Merit & Need-based University Support",
+    min_education: "intermediate",
+    allowed_streams: ["pre_medical", "biological_healthcare"],
+    entry_requirement: "FSc Pre-Medical with minimum 60% marks",
+    city: "Lahore, Islamabad, Karachi, Multan, Peshawar",
+    institute: "[BENCHMARK] King Edward Medical University, Riphah International, Dow University",
+    source_url: "https://hec.gov.pk/curriculum/dpt",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Musculoskeletal Assessment & Joint Mobilization",
+      "Neurological Rehabilitation (Stroke & Spinal Cord Recovery)",
+      "Sports Injury Therapy & Post-Surgical Conditioning",
+      "Electrotherapy, Ultrasound & Therapeutic Exercise Prescription",
+      "Biomechanics, Kinesiology & Patient Ergonomics"
+    ],
+    job_opportunities: [
+      "Consultant Physical Therapist in Hospitals",
+      "Sports Rehabilitation Specialist (Cricket / Football Clubs)",
+      "Independent Clinic / Private Rehabilitation Center Owner",
+      "Pediatric Physiotherapist in Special Care Centers"
+    ],
+    career_prospect: "Prestigious doctor-title clinical career with expanding private clinic potential and rising international migration pathways.",
+    when_to_choose: "Choose if you want direct clinical patient contact, love physical anatomy, and are passionate about restoring human movement.",
+    when_not_to_choose: "Do not choose if you want a purely desk-based computer job or lack the patience required for prolonged patient recovery.",
+    riasec_match: ["social", "investigative"],
+    hobbies_match: ["helping_health_firstaid", "sports_outdoors"]
+  },
+  {
+    id: 5,
+    name: "NAVTTC Full Stack Web & Mobile App Development (MERN & Flutter)",
+    type: "navttc_course",
+    sector: "Information Technology",
+    nvqf_level: 4,
+    duration_months: 6,
+    financial_model: "Government Subsidized / Tuition Fee Waiver (Allocated per national batch quota; no fixed cash amounts)",
+    min_education: "matric",
+    allowed_streams: ["ics", "matric_science_cs", "computer_it", "pre_engineering", "any"],
+    entry_requirement: "Matric or Intermediate (Any stream with basic computer familiarity)",
+    city: "Lahore, Karachi, Islamabad, Rawalpindi, Faisalabad",
+    institute: "[SAMPLE] Government College of Technology Lahore & KVTC",
+    source_url: "https://navttc.gov.pk/sample-courses/full-stack-web",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Modern JavaScript (ES6+), TypeScript & React.js",
+      "Tailwind CSS & Responsive Mobile-First Design",
+      "Node.js, Express REST APIs & Authentication (JWT)",
+      "MongoDB & PostgreSQL Database Schema Modeling",
+      "Git, GitHub Portfolios & Vercel Cloud Deployment"
+    ],
+    job_opportunities: [
+      "Junior Frontend / React Developer",
+      "MERN Stack Trainee",
+      "Independent Web Development Freelancer (Upwork / Fiverr)",
+      "WordPress & Custom Web Solution Provider"
+    ],
+    career_prospect: "Fastest route to market-ready skills and freelance client work. Portfolios count for 90% of hiring decisions.",
+    when_to_choose: "Choose if you want practical, immediate software development skills to build websites and start freelancing.",
+    when_not_to_choose: "Do not choose if you expect instant overnight cash without committing hours to daily coding practice.",
+    riasec_match: ["investigative", "enterprising"],
+    hobbies_match: ["gaming_tech", "drawing_design", "social_media_ecommerce"]
+  },
+  {
+    id: 6,
+    name: "BS Accounting & Finance (ACCA / CA Foundation Track)",
+    type: "university_degree",
+    sector: "Business & Commerce",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "HEC Accredited Business School Degree / Professional Exam Exemptions (ACCA 9 Papers Exemption)",
+    min_education: "intermediate",
+    allowed_streams: ["icom", "business_commerce", "general_technical_youth", "any"],
+    entry_requirement: "I.Com, FSc, FA, or ICS with minimum 45-50% marks",
+    city: "Karachi, Lahore, Islamabad, Faisalabad",
+    institute: "[BENCHMARK] IBA Karachi, LUMS Suleman Dawood, Hailey College of Commerce (PU), NUST NBS",
+    source_url: "https://hec.gov.pk/curriculum/accounting-finance",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Financial Accounting & International Reporting Standards (IFRS)",
+      "Corporate Finance, Capital Budgeting & Investment Valuation",
+      "Auditing, Taxation Law (FBR Regulatory Compliance)",
+      "Financial Modeling in Excel & Power BI Analytics",
+      "Cost Accounting & Enterprise Resource Planning (ERP / SAP)"
+    ],
+    job_opportunities: [
+      "Financial Analyst in Banks and FMCGs",
+      "Audit Associate in Chartered Accountancy Firms (Big 4)",
+      "Corporate Tax Consultant",
+      "Treasury & Accounts Officer"
+    ],
+    career_prospect: "Evergreen demand across banks, multinationals, audit firms, and fintech startups throughout Pakistan and Gulf countries.",
+    when_to_choose: "Choose if you are organized, enjoy business economics, working with numbers, spreadsheets, and financial strategy.",
+    when_not_to_choose: "Do not choose if you dislike detailed balance sheets, regulatory tax compliance, or mathematical finance.",
+    riasec_match: ["conventional", "enterprising"],
+    hobbies_match: ["social_media_ecommerce", "puzzles_logic", "reading_research"]
+  },
+  {
+    id: 7,
+    name: "Doctor of Pharmacy (Pharm-D) & Pharmaceutical Sciences",
+    type: "university_degree",
+    sector: "Allied Healthcare",
+    nvqf_level: 6,
+    duration_months: 60,
+    financial_model: "5-Year Professional Degree (Pharmacy Council of Pakistan Accredited) / University Need & Merit Scholarships",
+    min_education: "intermediate",
+    allowed_streams: ["pre_medical", "biological_healthcare"],
+    entry_requirement: "FSc Pre-Medical with minimum 60% marks",
+    city: "Lahore, Karachi, Islamabad, Peshawar",
+    institute: "[BENCHMARK] Punjab University College of Pharmacy, Dow College of Pharmacy, Quaid-i-Azam University",
+    source_url: "https://hec.gov.pk/curriculum/pharm-d",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Pharmaceutical Chemistry, Drug Formulation & Stability Testing",
+      "Pharmacology, Pharmacokinetics & Toxicology",
+      "Hospital & Clinical Pharmacy Patient Rounds",
+      "Drug Regulatory Authority of Pakistan (DRAP) Quality Guidelines",
+      "Industrial Batch Manufacturing, Tablet Formulation & Quality Control (QC)"
+    ],
+    job_opportunities: [
+      "Hospital Pharmacist & Clinical Specialist",
+      "Pharmaceutical Production / QC Executive",
+      "Regulatory Affairs Officer (DRAP / International Pharma)",
+      "Community Pharmacy Retail Chain Manager"
+    ],
+    career_prospect: "Strong corporate career path in Pakistan's thriving pharmaceutical manufacturing export sector and top hospital networks.",
+    when_to_choose: "Choose if you love chemistry, biology, medicinal science, and prefer laboratory or hospital environments.",
+    when_not_to_choose: "Do not choose if you dislike detailed chemical memorization or long laboratory formulation procedures.",
+    riasec_match: ["investigative", "conventional"],
+    hobbies_match: ["helping_health_firstaid", "reading_research"]
+  },
+  {
+    id: 8,
+    name: "BS UI/UX Design & Digital Product Architecture",
+    type: "university_degree",
+    sector: "Creative Arts",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "Degree in Design & Computing / Creative Talent Grants & Industry Partnerships",
+    min_education: "intermediate",
+    allowed_streams: ["fa", "social_sciences_humanities", "matric_general", "ics", "any"],
+    entry_requirement: "Intermediate in FA / ICS / FSc / I.Com with minimum 45% marks",
+    city: "Lahore, Karachi, Islamabad",
+    institute: "[BENCHMARK] National College of Arts (NCA), Beaconhouse National University (BNU), Habib University",
+    source_url: "https://hec.gov.pk/curriculum/design",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "User Research, Personas, Customer Journey Maps & Usability Audits",
+      "Figma Advanced Auto-Layout, Components & Interactive Prototyping",
+      "Visual Design Principles, Design Systems & Accessibility (WCAG)",
+      "Information Architecture, Wireframing & Micro-Interactions",
+      "Product Strategy, UX Writing & Cross-Functional Team Handoff"
+    ],
+    job_opportunities: [
+      "UI/UX Designer in Tech Startups & Software Houses",
+      "Digital Product Designer for Global Remote Teams",
+      "Independent Product Design Consultant",
+      "Mobile App Interaction Specialist"
+    ],
+    career_prospect: "One of the highest-paying non-coding creative careers in the modern digital economy with high overseas freelance rates.",
+    when_to_choose: "Choose if you have an eye for beauty, love sketching app ideas, understand human psychology, and enjoy design software.",
+    when_not_to_choose: "Do not choose if you dislike user feedback or prefer rigid mathematical formulas over creative iteration.",
+    riasec_match: ["artistic", "enterprising"],
+    hobbies_match: ["drawing_design", "video_editing", "social_media_ecommerce"]
+  },
+  {
+    id: 9,
+    name: "BS Electrical & Power Systems Engineering (PEC Accredited)",
+    type: "university_degree",
+    sector: "Manufacturing & Engineering",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "PEC Accredited Engineering Degree / HEC & Provincial University Grants",
+    min_education: "intermediate",
+    allowed_streams: ["pre_engineering", "engineering_applied", "dae"],
+    entry_requirement: "FSc Pre-Engineering with minimum 60% marks and ECAT/NET entry test",
+    city: "Lahore, Islamabad, Karachi, Taxila, Peshawar",
+    institute: "[BENCHMARK] UET Lahore, NUST EME/SEECS, GIKI, NED University Karachi",
+    source_url: "https://pec.org.pk",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Circuit Analysis, Electronics & Power Transmission",
+      "Renewable Energy Systems (Solar PV, Wind, Smart Grids)",
+      "Embedded Systems, Microcontrollers (Arduino/STM32) & IoT",
+      "Control Systems, MATLAB Simulation & PCB Design",
+      "Industrial Power Distribution & Transformer Safety Protocols"
+    ],
+    job_opportunities: [
+      "Electrical Power Engineer (WAPDA / DISCOs / Private IPPs)",
+      "Solar & Renewable Energy Project Engineer",
+      "Embedded Systems / Hardware Engineer",
+      "Industrial Plant Maintenance Engineer"
+    ],
+    career_prospect: "Vital foundation for power generation, telecom networks, solar energy projects, and modern industrial plants.",
+    when_to_choose: "Choose if you love physics, electrical circuits, renewable energy, and understanding how power grids operate.",
+    when_not_to_choose: "Do not choose if you struggle with advanced calculus, electromagnetic physics, or laboratory experimentation.",
+    riasec_match: ["realistic", "investigative"],
+    hobbies_match: ["tinkering_hardware", "puzzles_logic"]
+  },
+  {
+    id: 10,
+    name: "BBA (Bachelor of Business Administration & FinTech Innovation)",
+    type: "university_degree",
+    sector: "Business & Commerce",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "Accredited Business Degree / University Need-Based & Corporate Merit Grants",
+    min_education: "intermediate",
+    allowed_streams: ["icom", "business_commerce", "any"],
+    entry_requirement: "Intermediate (Any stream) with minimum 50% marks",
+    city: "Karachi, Lahore, Islamabad",
+    institute: "[BENCHMARK] IBA Karachi, LUMS, NUST NBS, Lahore School of Economics (LSE)",
+    source_url: "https://hec.gov.pk/curriculum/business-administration",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Strategic Business Management & Entrepreneurship",
+      "Digital Marketing, Brand Growth & Consumer Analytics",
+      "FinTech, Digital Wallets & Financial Ecosystems",
+      "Supply Chain Management & Operations Logistics",
+      "Leadership, Corporate Pitching & Business Communication"
+    ],
+    job_opportunities: [
+      "Management Trainee Officer (MTO) in Leading Multinationals",
+      "Brand Manager / Marketing Strategist",
+      "Fintech Operations & Business Development Associate",
+      "Independent E-Commerce Business Founder"
+    ],
+    career_prospect: "High corporate visibility and fast-track to executive management positions across banks, telecommunications, and FMCGs.",
+    when_to_choose: "Choose if you are an extroverted communicator, enjoy business strategy, marketing products, and leading teams.",
+    when_not_to_choose: "Do not choose if you prefer isolated individual technical work or avoid public speaking and presentations.",
+    riasec_match: ["enterprising", "conventional"],
+    hobbies_match: ["social_media_ecommerce", "writing_debate"]
+  },
+  {
+    id: 11,
+    name: "NAVTTC Solar PV Rooftop Installation & Net Metering Specialist",
+    type: "navttc_course",
+    sector: "Renewable Energy",
+    nvqf_level: 3,
+    duration_months: 3,
+    financial_model: "Government Subsidized / Hands-on Lab & Safety Equipment Provided by Technical Vocational Board",
+    min_education: "matric",
+    allowed_streams: ["matric_technical", "dae", "matric_science_cs", "general_technical_youth", "any"],
+    entry_requirement: "Matriculation (Science or Arts) or DAE",
+    city: "Lahore, Multan, Faisalabad, Rawalpindi, Peshawar, Hyderabad",
+    institute: "[SAMPLE] Punjab TEVTA Regional Centre & NAVTTC Partner Institutes",
+    source_url: "https://navttc.gov.pk/sample-courses/solar-installation",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Solar Panel Array Mounting & Rooftop Angle Calculations",
+      "Hybrid Inverter Setup, Battery Sizing & Charge Controllers",
+      "Net Metering Regulatory Compliance & Green Meter Filings",
+      "DC Circuit Testing, Protection Fuses & Earthing Grounding",
+      "Solar Tubewell & Commercial Industrial System Design"
+    ],
+    job_opportunities: [
+      "Certified Solar Installation Technician",
+      "Solar Sales & Site Feasibility Auditor",
+      "Independent Solar Business Contractor",
+      "Industrial Plant Energy Maintenance Officer"
+    ],
+    career_prospect: "Unprecedented market surge across homes, commercial plazas, and agricultural tubewells throughout Pakistan.",
+    when_to_choose: "Choose if you love working with physical tools, electrical equipment, and want to build a thriving technical business.",
+    when_not_to_choose: "Do not choose if you fear heights, dislike physical outdoor installation, or want purely air-conditioned desk work.",
+    riasec_match: ["realistic"],
+    hobbies_match: ["tinkering_hardware", "sports_outdoors"]
+  },
+  {
+    id: 12,
+    name: "BS Biotechnology, Genomics & Molecular Diagnostics",
+    type: "university_degree",
+    sector: "Allied Healthcare",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "HEC University Degree / Research Assistantships & Merit Scholarships",
+    min_education: "intermediate",
+    allowed_streams: ["pre_medical", "biological_healthcare", "matric_science_bio"],
+    entry_requirement: "FSc Pre-Medical with minimum 50% marks",
+    city: "Islamabad, Lahore, Karachi, Faisalabad",
+    institute: "[BENCHMARK] Quaid-i-Azam University, NUST ASAB, Government College University (GCU) Lahore",
+    source_url: "https://hec.gov.pk/curriculum/biotechnology",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Molecular Biology Techniques (PCR, DNA Sequencing, Gel Electrophoresis)",
+      "Bioinformatics, Gene Annotation & Protein Structure Modeling",
+      "Microbiology, Cell Culturing & Fermentation Technology",
+      "Clinical Diagnostic Kits & Immunology Assays (ELISA)",
+      "Agricultural & Food Biotechnology Quality Standards"
+    ],
+    job_opportunities: [
+      "Research Scientist in Genetic & Diagnostic Labs",
+      "Biotech Quality Control Specialist in Pharma/Food",
+      "Clinical Diagnostics Associate (Chughtai, Shaukat Khanum, AKU)",
+      "Higher Education & International Research Fellow"
+    ],
+    career_prospect: "Expanding modern science sector bridging healthcare, agriculture, and forensic science with top overseas scholarship opportunities.",
+    when_to_choose: "Choose if you are fascinated by DNA, laboratory research, viruses, and developing medical diagnostic solutions.",
+    when_not_to_choose: "Do not choose if you dislike detailed laboratory protocols or want immediate clinical patient diagnosis.",
+    riasec_match: ["investigative"],
+    hobbies_match: ["reading_research", "helping_health_firstaid"]
+  },
+  {
+    id: 13,
+    name: "NAVTTC Graphic Design, Brand Identity & Online Freelancing",
+    type: "navttc_course",
+    sector: "Creative Arts",
+    nvqf_level: 3,
+    duration_months: 3,
+    financial_model: "Government Funded / Subsidized (Computer lab access and design software workstations provided)",
+    min_education: "matric",
+    allowed_streams: ["fa", "matric_general", "social_sciences_humanities", "any"],
+    entry_requirement: "Matriculation (Any stream)",
+    city: "Lahore, Karachi, Islamabad, Peshawar, Rawalpindi",
+    institute: "[SAMPLE] Karachi Vocational Training Centre & TEVTA Colleges",
+    source_url: "https://navttc.gov.pk/sample-courses/graphic-design",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Adobe Illustrator (Vector Branding, Logos, Icons & Packaging)",
+      "Adobe Photoshop (Photo Manipulation, Social Media Creatives & Retouching)",
+      "Color Theory, Typography Hierarchies & Layout Balance",
+      "Canva Pro & Social Media Ad Templates Creation",
+      "Fiverr Gig Optimization, Upwork Proposals & Client Communication"
+    ],
+    job_opportunities: [
+      "Social Media Graphic Designer in Marketing Agencies",
+      "Independent Brand Identity Freelancer",
+      "E-Commerce Store Visual Creative Specialist",
+      "Print Media & Digital Publisher"
+    ],
+    career_prospect: "High demand across small businesses, digital agencies, and foreign clients seeking creative brand assets.",
+    when_to_choose: "Choose if you love colors, drawing, making social media posters, and want to build a creative freelance business.",
+    when_not_to_choose: "Do not choose if you dislike creative feedback or get frustrated by iterative design revisions.",
+    riasec_match: ["artistic", "enterprising"],
+    hobbies_match: ["drawing_design", "video_editing", "social_media_ecommerce"]
+  },
+  {
+    id: 14,
+    name: "BS Mechanical, Mechatronics & Robotics Systems (PEC Accredited)",
+    type: "university_degree",
+    sector: "Manufacturing & Engineering",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "PEC Accredited Degree / Subsidized Tuition in Public Engineering Universities",
+    min_education: "intermediate",
+    allowed_streams: ["pre_engineering", "engineering_applied", "dae"],
+    entry_requirement: "FSc Pre-Engineering with minimum 60% marks",
+    city: "Taxila, Lahore, Islamabad, Karachi, Risalpur",
+    institute: "[BENCHMARK] NUST College of E&ME, UET Taxila, GIKI, PNEC Karachi",
+    source_url: "https://pec.org.pk",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Computer-Aided Design (SolidWorks, AutoCAD & 3D Modeling)",
+      "Robotic Kinematics, Sensors & Actuators Programming",
+      "Thermodynamics, Fluid Mechanics & Material Science",
+      "Automated Manufacturing, CNC Machining & 3D Printing",
+      "Microcontroller Integration (C++ / Python Robotics OS)"
+    ],
+    job_opportunities: [
+      "Robotics & Mechatronics System Engineer",
+      "Automobile Design & Assembly Engineer (Toyota, Honda, Millat)",
+      "Industrial Plant Mechanical Maintenance Supervisor",
+      "Defense Production & Aerospace Specialist"
+    ],
+    career_prospect: "Essential for automotive manufacturing, textile automation, aerospace, and advanced defense industries.",
+    when_to_choose: "Choose if you love machinery, engines, robots, taking things apart and building physical devices.",
+    when_not_to_choose: "Do not choose if you struggle with advanced physics, mechanics, or physical workshop machinery.",
+    riasec_match: ["realistic", "investigative"],
+    hobbies_match: ["tinkering_hardware", "puzzles_logic"]
+  },
+  {
+    id: 15,
+    name: "NAVTTC Cybersecurity, Network Defense & SOC Operations",
+    type: "navttc_course",
+    sector: "Information Technology",
+    nvqf_level: 4,
+    duration_months: 6,
+    financial_model: "Government Subsidized / Special Lab Workstation Access Provided",
+    min_education: "intermediate",
+    allowed_streams: ["ics", "pre_engineering", "computer_it"],
+    entry_requirement: "Intermediate (ICS/Pre-Engineering) with basic computer science",
+    city: "Islamabad, Lahore, Karachi",
+    institute: "[SAMPLE] National Institute of Technology & Skills Islamabad",
+    source_url: "https://navttc.gov.pk/sample-courses/cybersecurity",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Network Penetration Testing & Vulnerability Assessment Tools (Nmap, Metasploit)",
+      "Wireshark Packet Analysis & Traffic Inspection",
+      "Firewall Rules, Intrusion Detection Systems (IDS/IPS) & SIEM",
+      "Linux System Hardening & Security Compliance (ISO 27001)",
+      "Incident Response Protocols & Ethical Hacking Methodologies"
+    ],
+    job_opportunities: [
+      "Junior Security Operations Center (SOC) Analyst",
+      "Network Defense & Systems Security Trainee",
+      "Cybersecurity Audit Assistant",
+      "Vulnerability Assessment Freelance Consultant"
+    ],
+    career_prospect: "High demand in banking, telecom, defense, and multinational software corporations with strong compensation scales.",
+    when_to_choose: "Choose if you have an investigative mind, love detective work, network protocols, and computer security defense.",
+    when_not_to_choose: "Do not choose if you lack patience for complex log files or do not understand basic operating system commands.",
+    riasec_match: ["investigative", "realistic"],
+    hobbies_match: ["gaming_tech", "puzzles_logic", "reading_research"]
+  },
+  {
+    id: 16,
+    name: "NAVTTC E-Commerce Operations, Shopify & Amazon/Daraz Private Label",
+    type: "navttc_course",
+    sector: "Business & Commerce",
+    nvqf_level: 3,
+    duration_months: 3,
+    financial_model: "Government Subsidized / E-Commerce Incubation Space Access",
+    min_education: "matric",
+    allowed_streams: ["icom", "business_commerce", "matric_general", "any"],
+    entry_requirement: "Matric or Intermediate (Any stream)",
+    city: "Karachi, Lahore, Faisalabad, Sialkot, Gujranwala",
+    institute: "[SAMPLE] TEVTA E-Commerce Training Center",
+    source_url: "https://navttc.gov.pk/sample-courses/ecommerce",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Daraz Seller Center Setup, Product Listing & Campaign Management",
+      "Shopify Store Creation, Theme Customization & Payment Integration",
+      "Product Hunting, Winning Product Criteria & Wholesale Sourcing",
+      "Social Commerce (TikTok Shop, Instagram DMs & WhatsApp Orders)",
+      "Order Fulfillment, Courier Logistics (TCS, Leopards, Trax) & Customer Support"
+    ],
+    job_opportunities: [
+      "Daraz / Amazon Virtual Assistant (VA)",
+      "Shopify Store Manager for Local Brands",
+      "Independent E-Commerce Brand Owner",
+      "Export Sourcing Coordinator for Sialkot/Faisalabad Goods"
+    ],
+    career_prospect: "Direct launchpad for independent online stores and managing export brands without needing heavy starting capital.",
+    when_to_choose: "Choose if you are business-minded, love sales, exploring consumer trends, and want to run your own online shop.",
+    when_not_to_choose: "Do not choose if you dislike customer communication, inventory tracking, or managing parcel returns.",
+    riasec_match: ["enterprising", "conventional"],
+    hobbies_match: ["social_media_ecommerce", "writing_debate"]
+  },
+  {
+    id: 17,
     name: "NAVTTC Cloud Computing & DevOps Practitioner",
     type: "navttc_course",
     sector: "Information Technology",
     nvqf_level: 4,
     duration_months: 6,
-    financial_model: "Government Subsidized / Tuition Fee Waiver (Institutional financial assistance subject to quota & eligibility; no guaranteed cash amounts)",
+    financial_model: "Government Subsidized / Tuition Fee Waiver (Allocated per quota; no fixed cash amounts)",
     min_education: "intermediate",
-    allowed_streams: ["any", "ics", "pre_engineering", "general_science"],
-    entry_requirement: "Intermediate (FSc/ICS/FA) or Matric with Computer Science",
-    city: "Islamabad",
+    allowed_streams: ["ics", "pre_engineering", "computer_it"],
+    entry_requirement: "Intermediate (ICS/Pre-Engineering) or Matric with Computer Science",
+    city: "Islamabad, Lahore",
     institute: "[SAMPLE] National Institute of Technology & Skills Islamabad",
     source_url: "https://navttc.gov.pk/sample-courses/cloud-computing",
     verified_date: "2026-03-01",
     skills_to_master: [
-      "Linux Server Administration & Shell Scripting",
-      "Cloud Infrastructure Architecture (AWS / Google Cloud)",
-      "Docker Containers & Microservices Deployment",
-      "CI/CD Automation Pipelines (GitHub Actions / Jenkins)",
-      "Network Protocols, Subnetting & System Monitoring"
+      "Linux Server Administration & Bash Shell Scripting",
+      "Cloud Infrastructure Setup on AWS and Google Cloud Platform",
+      "Docker Containerization & Kubernetes Microservices Basics",
+      "CI/CD Automation Pipelines (GitHub Actions & GitLab CI)",
+      "Network Subnetting, Security Groups & Server Monitoring (Prometheus/Grafana)"
     ],
     job_opportunities: [
-      "Cloud Support Associate",
-      "Junior DevOps Engineer",
-      "Systems Administrator Trainee",
+      "Junior Cloud & DevOps Support Associate",
+      "Linux Systems Administrator Trainee",
+      "Site Reliability Engineering (SRE) Assistant",
       "Remote Infrastructure Freelancer"
     ],
-    career_prospect: "Strong corporate demand across domestic IT exporters and international remote contracts. Earnings and hiring depend entirely on hands-on lab competence and public project repositories.",
-    when_to_choose: "Choose if you enjoy solving logical computer problems, configuring systems, and working methodically with terminal commands and server architectures.",
-    when_not_to_choose: "Do not choose if you strongly prefer face-to-face outdoor work or become easily frustrated by abstract software debugging.",
+    career_prospect: "Crucial backbone for software houses maintaining 24/7 web platforms and overseas cloud migrations.",
+    when_to_choose: "Choose if you enjoy terminal commands, configuring servers, networking, and keeping systems running smoothly.",
+    when_not_to_choose: "Do not choose if you dislike complex server command lines or want visual creative work.",
     riasec_match: ["investigative", "realistic"],
     hobbies_match: ["gaming_tech", "tinkering_hardware", "puzzles_logic"]
   },
   {
-    id: 2,
-    name: "NAVTTC Full Stack Web Development (MERN)",
-    type: "navttc_course",
-    sector: "Information Technology",
-    nvqf_level: 4,
-    duration_months: 6,
-    financial_model: "Government Subsidized / Tuition Fee Waiver (Institutional aid allocated per batch quota; no fixed cash figures)",
-    min_education: "matric",
-    allowed_streams: ["any"],
-    entry_requirement: "Matric or Intermediate (Any stream)",
-    city: "Lahore, Karachi",
-    institute: "[SAMPLE] Government College of Technology Lahore & KVTC",
-    source_url: "https://navttc.gov.pk/sample-courses/full-stack-web",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "HTML5, Modern CSS & Tailwind Frameworks",
-      "JavaScript (ES6+) & TypeScript Fundamentals",
-      "React.js Single Page Applications & Component Trees",
-      "Node.js & Express RESTful APIs",
-      "MongoDB Database Design & Git Version Control"
-    ],
-    job_opportunities: [
-      "Junior Frontend / Web Developer",
-      "Full Stack Development Intern",
-      "Shopify & WordPress Customizer",
-      "Independent Web Development Freelancer"
-    ],
-    career_prospect: "Extensive market opportunities in local software companies and remote freelancing platforms. Employment is strictly merit-based and portfolio-driven.",
-    when_to_choose: "Choose if you love building interactive websites, see immediate visual results from code, and are willing to write code daily.",
-    when_not_to_choose: "Do not choose if you dislike sitting at a computer screen for hours or want immediate instant earnings without building a portfolio first.",
-    riasec_match: ["investigative", "enterprising"],
-    hobbies_match: ["gaming_tech", "drawing_design", "social_media_ecommerce"]
-  },
-  {
-    id: 3,
-    name: "NAVTTC Python Programming & Artificial Intelligence Basics",
-    type: "navttc_course",
-    sector: "Information Technology",
-    nvqf_level: 4,
-    duration_months: 6,
-    financial_model: "Government Subsidized (Tuition waiver under national youth skill program; quota-based support)",
-    min_education: "intermediate",
-    allowed_streams: ["ics", "pre_engineering", "matric_science_cs"],
-    entry_requirement: "Intermediate (Pre-Engineering/ICS) or Matric Science",
-    city: "Islamabad",
-    institute: "[SAMPLE] National Institute of Technology & Skills Islamabad",
-    source_url: "https://navttc.gov.pk/sample-courses/python-ai",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "Core Python & Object-Oriented Programming",
-      "Data Manipulation with Pandas & NumPy",
-      "Foundational Machine Learning Algorithms",
-      "Generative AI Prompt Engineering & API Integration",
-      "Data Visualisation & Ethical AI Workflow"
-    ],
-    job_opportunities: [
-      "Junior Python Developer",
-      "Data Analyst Associate",
-      "AI Integration & Automation Specialist",
-      "Research Assistant Trainee"
-    ],
-    career_prospect: "Rapidly expanding specialization in corporate data intelligence and workflow automation. Best paired with strong mathematical logic.",
-    when_to_choose: "Choose if you have an affinity for math puzzles, data patterns, and automating repetitive tasks.",
-    when_not_to_choose: "Do not choose if you want to avoid algebra, statistical concepts, or reading technical documentation.",
-    riasec_match: ["investigative"],
-    hobbies_match: ["gaming_tech", "reading_research", "puzzles_logic"]
-  },
-  {
-    id: 4,
-    name: "NAVTTC Graphic Design, UI/UX & Freelancing",
+    id: 18,
+    name: "NAVTTC Video Editing, Motion Graphics & Visual Effects",
     type: "navttc_course",
     sector: "Creative Arts",
     nvqf_level: 3,
     duration_months: 3,
-    financial_model: "Government Funded / Subsidized (Support provided per regional vocational center guidelines)",
+    financial_model: "Government Subsidized / High-End Editing Workstations Provided",
     min_education: "matric",
-    allowed_streams: ["any"],
-    entry_requirement: "Matric (Any stream)",
-    city: "Lahore, Karachi",
-    institute: "[SAMPLE] Karachi Vocational Training Centre",
-    source_url: "https://navttc.gov.pk/sample-courses/graphic-design",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "Visual Design Principles, Color Theory & Typography",
-      "Figma UI/UX Mobile & Web Prototyping",
-      "Adobe Illustrator Vector Branding & Logo Creation",
-      "Adobe Photoshop Image Editing & Marketing Creatives",
-      "Online Freelancing Profile Setup & Client Communication"
-    ],
-    job_opportunities: [
-      "Junior UI/UX Designer",
-      "Brand Identity & Social Media Designer",
-      "Freelance Marketplace Creator (Upwork / Fiverr)",
-      "Digital Marketing Agency Visual Specialist"
-    ],
-    career_prospect: "High demand across startups, e-commerce stores, and overseas clients. Income varies according to portfolio aesthetics and client acquisition skills.",
-    when_to_choose: "Choose if you have natural visual flair, love drawing, styling, or designing graphics, and take pleasure in critique.",
-    when_not_to_choose: "Do not choose if you dislike visual feedback or find digital tools frustrating to learn.",
-    riasec_match: ["artistic", "enterprising"],
-    hobbies_match: ["drawing_design", "video_editing", "social_media_ecommerce"]
-  },
-  {
-    id: 5,
-    name: "NAVTTC Solar PV System Installation & Maintenance",
-    type: "navttc_course",
-    sector: "Renewable Energy",
-    nvqf_level: 3,
-    duration_months: 3,
-    financial_model: "Government Subsidized (Equipment, safety gear, and practical lab training provided)",
-    min_education: "matric",
-    allowed_streams: ["any", "matric_science_bio", "matric_science_cs", "matric_general"],
-    entry_requirement: "Matric (Any stream)",
-    city: "Lahore, Rawalpindi, Multan",
-    institute: "[SAMPLE] Punjab TEVTA Regional Centre",
-    source_url: "https://navttc.gov.pk/sample-courses/solar-installation",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "Photovoltaic (PV) Module Wiring & Inverter Configuration",
-      "Solar Rooftop Load Calculation & System Sizing",
-      "Net Metering Regulatory Compliance & Safety Protocols",
-      "Battery Storage & Hybrid Inverter Troubleshooting",
-      "Electrical Circuit Testing & Field Safety Standards"
-    ],
-    job_opportunities: [
-      "Certified Solar Installation Technician",
-      "Residential Renewable Energy Installer",
-      "Solar Maintenance & Service Contractor",
-      "Independent Solar Business Operator"
-    ],
-    career_prospect: "Huge domestic surge across residential, agricultural tube wells, and industrial factories throughout Pakistan.",
-    when_to_choose: "Choose if you like hands-on electrical work, outdoor physical tasks, and working with tools and circuit breakers.",
-    when_not_to_choose: "Do not choose if you fear heights, dislike outdoor physical work, or prefer desk jobs.",
-    riasec_match: ["realistic"],
-    hobbies_match: ["tinkering_hardware", "sports_outdoors"]
-  },
-  {
-    id: 6,
-    name: "NAVTTC Cybersecurity & Network Defense Trainee",
-    type: "navttc_course",
-    sector: "Information Technology",
-    nvqf_level: 4,
-    duration_months: 6,
-    financial_model: "Government Subsidized / Tuition Fee Waiver (Lab workstations funded under national digital skills)",
-    min_education: "intermediate",
-    allowed_streams: ["ics", "pre_engineering"],
-    entry_requirement: "Intermediate (ICS/Pre-Engineering)",
-    city: "Islamabad, Lahore",
-    institute: "[SAMPLE] National Institute of Technology & Skills Islamabad",
-    source_url: "https://navttc.gov.pk/sample-courses/cybersecurity",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "Network Penetration Testing & Vulnerability Assessment",
-      "Firewall Configuration & Intrusion Detection (IDS/IPS)",
-      "Wireshark Packet Analysis & Threat Mitigation",
-      "Security Compliance Frameworks (ISO 27001 basics)",
-      "Ethical Hacking Methodologies & Report Writing"
-    ],
-    job_opportunities: [
-      "Junior SOC Analyst",
-      "Network Security Trainee",
-      "Cybersecurity Auditor Assistant",
-      "IT Infrastructure Support Officer"
-    ],
-    career_prospect: "Critical national demand across banking, telecom, and defense sectors with expanding corporate compliance needs.",
-    when_to_choose: "Choose if you enjoy investigative problem solving, computer networking, and ethical security defense.",
-    when_not_to_choose: "Do not choose if you lack patience for complex network logs or do not meet prerequisite intermediate math/physics.",
-    riasec_match: ["investigative", "realistic"],
-    hobbies_match: ["gaming_tech", "puzzles_logic", "reading_research"]
-  },
-  {
-    id: 7,
-    name: "NAVTTC Digital Marketing & E-Commerce Business",
-    type: "navttc_course",
-    sector: "Business & Commerce",
-    nvqf_level: 3,
-    duration_months: 3,
-    financial_model: "Government Subsidized (Fee concessions subject to local institute policy; no guaranteed cash stipends)",
-    min_education: "matric",
-    allowed_streams: ["any"],
-    entry_requirement: "Matric (Any stream)",
-    city: "Karachi, Lahore, Faisalabad",
-    institute: "[SAMPLE] Government College of Technology & Commerce",
-    source_url: "https://navttc.gov.pk/sample-courses/digital-marketing",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "Social Media Marketing (Meta, TikTok & YouTube Ads)",
-      "Search Engine Optimization (SEO) & Keyword Strategy",
-      "Shopify & Daraz Store Setup and Product Hunting",
-      "Content Copywriting & Performance Analytics",
-      "Customer Relationship Management (CRM) & Lead Generation"
-    ],
-    job_opportunities: [
-      "Digital Marketing Executive",
-      "E-Commerce Store Manager",
-      "Daraz / Amazon Private Label Assistant",
-      "Performance Ads Campaign Freelancer"
-    ],
-    career_prospect: "Vital for small businesses, retail brands, and independent e-commerce dropshippers across Pakistan.",
-    when_to_choose: "Choose if you are persuasive, enjoy social media dynamics, understand consumer trends, and want to market products.",
-    when_not_to_choose: "Do not choose if you dislike writing, avoid public-facing communication, or prefer strict mathematical lab work.",
-    riasec_match: ["enterprising", "conventional"],
-    hobbies_match: ["social_media_ecommerce", "writing_debate", "drawing_design"]
-  },
-  {
-    id: 8,
-    name: "NAVTTC Industrial Automation & PLC Programming",
-    type: "navttc_course",
-    sector: "Manufacturing & Engineering",
-    nvqf_level: 4,
-    duration_months: 6,
-    financial_model: "Government Subsidized (Industrial lab access and equipment subsidized by vocational boards)",
-    min_education: "intermediate",
-    allowed_streams: ["pre_engineering", "ics"],
-    entry_requirement: "FSc Pre-Engineering or DAE Electrical/Mechanical",
-    city: "Faisalabad, Gujranwala, Karachi",
-    institute: "[SAMPLE] Punjab TEVTA Industrial Training Institute",
-    source_url: "https://navttc.gov.pk/sample-courses/industrial-automation",
-    verified_date: "2026-03-01",
-    skills_to_master: [
-      "Programmable Logic Controllers (PLC) Ladder Logic",
-      "SCADA Supervisory Control Systems & Sensor Wiring",
-      "Industrial Pneumatics, Hydraulics & Motor Drives",
-      "Robotic Assembly Basics & Safety Interlocks",
-      "Electrical Control Panel Design & Testing"
-    ],
-    job_opportunities: [
-      "Automation Maintenance Technician",
-      "PLC Programmer Trainee",
-      "Textile / Chemical Plant Control Operator",
-      "Industrial Instrumentation Assistant"
-    ],
-    career_prospect: "Crucial for textile mills, cement plants, FMCG packaging factories, and automobile assemblers.",
-    when_to_choose: "Choose if you love industrial machinery, electrical circuitry, and factory floor operations.",
-    when_not_to_choose: "Do not choose if you want a purely remote home desk job or have no background in basic physics.",
-    riasec_match: ["realistic", "investigative"],
-    hobbies_match: ["tinkering_hardware", "puzzles_logic"]
-  },
-  {
-    id: 9,
-    name: "NAVTTC Video Editing, Motion Graphics & Animation",
-    type: "navttc_course",
-    sector: "Creative Arts",
-    nvqf_level: 3,
-    duration_months: 3,
-    financial_model: "Government Subsidized (High-performance lab editing workstations provided)",
-    min_education: "matric",
-    allowed_streams: ["any"],
-    entry_requirement: "Matric (Any stream)",
+    allowed_streams: ["fa", "social_sciences_humanities", "matric_general", "any"],
+    entry_requirement: "Matriculation (Any stream)",
     city: "Lahore, Karachi, Islamabad",
     institute: "[SAMPLE] Karachi Vocational Training Centre",
     source_url: "https://navttc.gov.pk/sample-courses/video-editing",
     verified_date: "2026-03-01",
     skills_to_master: [
-      "Adobe Premiere Pro Video Cutting & Narrative Pacing",
-      "Adobe After Effects Motion Graphics & Visual Effects",
-      "Audio Cleanup, Foley & Sound Design in Audition",
-      "Color Grading, LUTs & Export Optimization",
-      "YouTube & Reel Storytelling Formats"
+      "Adobe Premiere Pro Video Cutting, Pacing & Story Sequencing",
+      "Adobe After Effects Motion Titles, Kinetic Typography & Green Screen",
+      "Audio Cleanup, Foley Sound Effects & Background Music Mixing",
+      "Color Correction & Cinematic Color Grading (LUTs)",
+      "Short-form Content Formats (Reels, TikTok, YouTube Shorts Pacing)"
     ],
     job_opportunities: [
-      "Junior Video Editor",
-      "Motion Graphics Designer",
-      "Content Creator Assistant / Studio Editor",
-      "Remote Freelance Video Producer"
+      "Video Editor for YouTube Creators and Influencers",
+      "Social Media Video Specialist in Advertising Agencies",
+      "Remote Freelance Video Producer on Upwork/Fiverr",
+      "Television & Media Production Studio Assistant"
     ],
-    career_prospect: "Exploding creator economy, television channels, marketing agencies, and international video channels seeking editing talent.",
-    when_to_choose: "Choose if you love video games, cinema, music synchronization, and storytelling with visual rhythm.",
-    when_not_to_choose: "Do not choose if you find detailed timeline rendering tedious or lack interest in media production.",
+    career_prospect: "Booming creator economy with massive remote international demand for talented video storytellers.",
+    when_to_choose: "Choose if you love cinema, video pacing, music rhythm, storytelling, and visual creativity.",
+    when_not_to_choose: "Do not choose if you find long video rendering or fine detail trimming on timelines tedious.",
     riasec_match: ["artistic"],
     hobbies_match: ["video_editing", "drawing_design", "social_media_ecommerce"]
   },
   {
-    id: 10,
-    name: "NAVTTC Clinical Medical Assistant & Hospital Care",
+    id: 19,
+    name: "LLB (5-Year Law Degree & Civil Advocacy - LAT Track)",
+    type: "university_degree",
+    sector: "Law & Advocacy",
+    nvqf_level: 6,
+    duration_months: 60,
+    financial_model: "Pakistan Bar Council (PBC) Accredited 5-Year Professional Degree / Merit & Need Scholarships",
+    min_education: "intermediate",
+    allowed_streams: ["fa", "social_sciences_humanities", "any"],
+    entry_requirement: "Intermediate (Any stream) with minimum 45% marks and Law Admission Test (LAT) clearance",
+    city: "Islamabad, Lahore, Karachi, Peshawar, Quetta",
+    institute: "[BENCHMARK] Punjab University Law College (PULC), Quaid-i-Azam University, LUMS School of Law, Karachi University",
+    source_url: "https://pakistanbarcouncil.org",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Constitutional Law, Criminal Jurisprudence & Civil Procedure Code (CPC)",
+      "Legal Drafting, Case Briefs & Commercial Contract Structuring",
+      "Moot Court Advocacy, Cross-Examination & Public Speaking",
+      "Corporate Law, Banking Regulations & Intellectual Property (IPO Pakistan)",
+      "Legal Research & Analysis of High Court / Supreme Court Case Precedents"
+    ],
+    job_opportunities: [
+      "Advocate in High Courts & District Courts",
+      "Corporate Legal Counsel for Banks, Multinationals & Startups",
+      "Civil Superior Services (CSS) / Judicial Magistrate Preparation",
+      "Human Rights & Legal Aid NGO Consultant"
+    ],
+    career_prospect: "Distinguished societal standing, private practice independence, and corporate law retainer agreements.",
+    when_to_choose: "Choose if you are passionate about justice, love reading case law, debating, arguing persuasively, and defending rights.",
+    when_not_to_choose: "Do not choose if you dislike reading heavy volumes of books or avoid public speaking in courtrooms.",
+    riasec_match: ["enterprising", "social"],
+    hobbies_match: ["writing_debate", "reading_research"]
+  },
+  {
+    id: 20,
+    name: "NAVTTC Clinical Healthcare Assistant & Emergency Medical Services",
     type: "navttc_course",
     sector: "Allied Healthcare",
     nvqf_level: 3,
     duration_months: 6,
-    financial_model: "Government Subsidized (Hospital clinical rotations and clinical kits provided)",
+    financial_model: "Government Subsidized (Clinical kits and hospital rotations subsidized under national skill programs)",
     min_education: "matric",
-    allowed_streams: ["matric_science_bio", "fsc_pre_medical"],
-    entry_requirement: "Matric (Biology) or FSc Pre-Medical",
-    city: "Peshawar, Quetta, Multan",
-    institute: "[SAMPLE] KPK TEVTA Allied Health Institute",
+    allowed_streams: ["matric_science_bio", "pre_medical", "biological_healthcare"],
+    entry_requirement: "Matric (Science with Biology) or FSc Pre-Medical",
+    city: "Peshawar, Quetta, Multan, Abbottabad, Sukkur",
+    institute: "[SAMPLE] KPK TEVTA Allied Health Institute & Regional Teaching Hospitals",
     source_url: "https://navttc.gov.pk/sample-courses/clinical-assistant",
     verified_date: "2026-03-01",
     skills_to_master: [
-      "Vital Signs Monitoring (BP, Pulse, Temperature, Glucose)",
-      "Sterilization, Infection Control & Biosafety Protocols",
-      "Basic First Aid, CPR & Emergency Triage Support",
-      "Medical Terminology & Outpatient Workflow",
-      "Patient Records Management & Empathetic Communication"
+      "Vital Signs Assessment (Blood Pressure, Heart Rate, SpO2, Blood Glucose)",
+      "Sterilization, Antiseptic Protocols & Infection Control in Clinics",
+      "Emergency First Aid, Wound Dressing, Bandaging & CPR Support",
+      "Medical Terminology, Basic Pharmacology & Prescription Handling",
+      "Patient Intake Workflow & Empathetic Communication"
     ],
     job_opportunities: [
-      "Clinical Support Assistant",
-      "Hospital Outpatient Ward Attendant",
-      "Emergency Clinic First Responder Assistant",
-      "Home Health Support Specialist"
+      "Clinic Support Assistant in Private Medical Centers",
+      "Hospital Ward & Emergency Outpatient Attendant",
+      "Diagnostic Center Patient Care Assistant",
+      "Community Health Outreach Worker"
     ],
-    career_prospect: "Direct stepping stone into allied healthcare, private clinic management, and hospital operations across all provinces.",
-    when_to_choose: "Choose if you have genuine empathy for patients, interest in medical knowledge, and desire to serve communities.",
-    when_not_to_choose: "Do not choose if you cannot handle blood, clinic emergencies, or shift timings.",
+    career_prospect: "Direct practical entry point into healthcare delivery across district clinics, dispensaries, and private medical networks.",
+    when_to_choose: "Choose if you want to serve sick patients, gain immediate clinical hospital experience, and build a career in healthcare.",
+    when_not_to_choose: "Do not choose if you have a phobia of needles or medical clinical procedures.",
     riasec_match: ["social"],
     hobbies_match: ["helping_health_firstaid"]
+  },
+  {
+    id: 21,
+    name: "NAVTTC Automobile Electrician & Hybrid Vehicle Diagnostics",
+    type: "navttc_course",
+    sector: "Automotive",
+    nvqf_level: 3,
+    duration_months: 6,
+    financial_model: "Government Subsidized / Hands-on Automotive Workshop Training Provided",
+    min_education: "matric",
+    allowed_streams: ["matric_technical", "dae", "general_technical_youth"],
+    entry_requirement: "Matriculation (Any stream)",
+    city: "Rawalpindi, Lahore, Karachi, Gujranwala, Multan",
+    institute: "[SAMPLE] Punjab TEVTA Automobile Training Center",
+    source_url: "https://navttc.gov.pk/sample-courses/auto-electrician",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Automotive ECU & OBD-II Computer Scanner Diagnostics",
+      "Hybrid & Electric Vehicle (EV) Battery Pack Safety & Servicing",
+      "Automobile Wiring Harnesses, Alternators & Starter Motors",
+      "Electronic Fuel Injection (EFI) Sensor Troubleshooting",
+      "Car Air Conditioning (AC) Electrical Control Systems"
+    ],
+    job_opportunities: [
+      "EFI & Auto Electrician Technician",
+      "Hybrid Vehicle Diagnostic Specialist",
+      "Authorized Dealership Service Technician (Toyota, Suzuki, Kia)",
+      "Independent Auto Workshop Owner"
+    ],
+    career_prospect: "Rapidly modernizing industry due to massive influx of Japanese hybrid cars and EVs requiring electronic diagnostic skills.",
+    when_to_choose: "Choose if you love cars, engines, electronics, automotive workshop environments, and practical mechanical troubleshooting.",
+    when_not_to_choose: "Do not choose if you dislike grease, workshop tools, or hands-on mechanical work.",
+    riasec_match: ["realistic"],
+    hobbies_match: ["tinkering_hardware"]
+  },
+  {
+    id: 22,
+    name: "NAVTTC Mobile Phone Hardware & Advanced SMD Circuit Repair",
+    type: "navttc_course",
+    sector: "Electronics & Hardware",
+    nvqf_level: 3,
+    duration_months: 3,
+    financial_model: "Government Subsidized / SMD Soldering Stations & Test Equipment Provided",
+    min_education: "matric",
+    allowed_streams: ["matric_technical", "matric_science_cs", "general_technical_youth", "any"],
+    entry_requirement: "Matriculation (Any stream)",
+    city: "Karachi, Lahore, Rawalpindi, Peshawar, Multan",
+    institute: "[SAMPLE] Regional TEVTA Electronics Center",
+    source_url: "https://navttc.gov.pk/sample-courses/mobile-repair",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Microscope-Assisted SMD Component Soldering & Desoldering",
+      "Motherboard Circuit Tracing, Short-Circuit Removal & Jumpering",
+      "Power IC, Charging IC & Network IC Replacement",
+      "Digital Multimeter Diagnosis, Voltages & Resistance Checks",
+      "Display Glass OCA Lamination & Battery Replacement Protocols"
+    ],
+    job_opportunities: [
+      "Senior Mobile Hardware Technician",
+      "Service Center Repair Specialist",
+      "Independent Electronics Repair Business Owner",
+      "Wholesale Refurbishment Specialist"
+    ],
+    career_prospect: "Consistently high local demand in mobile markets across Pakistan with quick path to profitable daily cash earnings.",
+    when_to_choose: "Choose if you have steady hands, love micro-electronics, fixing gadgets, and want low-investment self-employment.",
+    when_not_to_choose: "Do not choose if you lack hand-eye coordination or patience for microscopic soldering.",
+    riasec_match: ["realistic", "investigative"],
+    hobbies_match: ["tinkering_hardware", "puzzles_logic"]
+  },
+  {
+    id: 23,
+    name: "NAVTTC Digital Marketing, Performance Ads & Brand Strategy",
+    type: "navttc_course",
+    sector: "Business & Commerce",
+    nvqf_level: 3,
+    duration_months: 3,
+    financial_model: "Government Subsidized (Lab workstations provided)",
+    min_education: "matric",
+    allowed_streams: ["icom", "business_commerce", "fa", "matric_general", "any"],
+    entry_requirement: "Matriculation (Any stream)",
+    city: "Karachi, Lahore, Islamabad, Faisalabad",
+    institute: "[SAMPLE] Government College of Technology & Commerce",
+    source_url: "https://navttc.gov.pk/sample-courses/digital-marketing",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Meta Ads Manager (Facebook & Instagram High-ROI Campaign Setup)",
+      "Search Engine Optimization (SEO), Keyword Research & On-Page Content",
+      "Google Ads (Search, Display & YouTube Video Campaigns)",
+      "Content Copywriting, Compelling Hooks & Storytelling",
+      "Analytics Tracking (Google Analytics 4 & Conversion Pixels)"
+    ],
+    job_opportunities: [
+      "Performance Marketing Specialist",
+      "SEO Content & Growth Executive",
+      "Social Media Campaign Freelancer (Upwork / Fiverr)",
+      "In-House Digital Growth Officer for Pakistani Retailers"
+    ],
+    career_prospect: "Every business in Pakistan requires online marketing. Excellent opportunities for both remote jobs and local agencies.",
+    when_to_choose: "Choose if you love social media, marketing, psychology, writing hooks, and tracking campaign sales numbers.",
+    when_not_to_choose: "Do not choose if you dislike copywriting or evaluating campaign performance metrics.",
+    riasec_match: ["enterprising", "conventional"],
+    hobbies_match: ["social_media_ecommerce", "writing_debate"]
+  },
+  {
+    id: 24,
+    name: "BS Psychology, Behavioral Sciences & Counseling",
+    type: "university_degree",
+    sector: "Social Sciences",
+    nvqf_level: 6,
+    duration_months: 48,
+    financial_model: "HEC Accredited Degree / University Need & Merit Scholarships",
+    min_education: "intermediate",
+    allowed_streams: ["fa", "social_sciences_humanities", "pre_medical", "matric_general"],
+    entry_requirement: "Intermediate (FA, FSc Pre-Medical, ICS, or I.Com) with minimum 50% marks",
+    city: "Lahore, Islamabad, Karachi, Peshawar",
+    institute: "[BENCHMARK] Government College University (GCU), Quaid-i-Azam University, Forman Christian College, Beaconhouse National University",
+    source_url: "https://hec.gov.pk/curriculum/psychology",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Cognitive Behavioral Therapy (CBT) Principles & Mental Health Assessment",
+      "Child Development, Educational Psychology & Learning Disabilities",
+      "Organizational Psychology & Human Resource Talent Management",
+      "Statistical Data Analysis (SPSS) & Psychological Research Methods",
+      "Empathetic Active Listening, Crisis Counseling & Emotional Support"
+    ],
+    job_opportunities: [
+      "Educational School / College Counselor",
+      "Clinical Psychologist Assistant in Psychiatric Units",
+      "Corporate HR & Employee Well-Being Executive",
+      "NGO Mental Health Project Coordinator"
+    ],
+    career_prospect: "Surging societal awareness of mental health, educational counseling in elite schools, and corporate HR advisory.",
+    when_to_choose: "Choose if you are deeply empathetic, a patient listener, fascinated by the human mind, and want to heal emotional struggles.",
+    when_not_to_choose: "Do not choose if you find others' emotional distress overwhelming or want purely commercial sales work.",
+    riasec_match: ["social", "investigative"],
+    hobbies_match: ["helping_health_firstaid", "reading_research"]
+  },
+  {
+    id: 25,
+    name: "SEO Content Strategy, Copywriting & Technical Writing (NVQF Level 4)",
+    type: "navttc_course",
+    sector: "Digital Media & Communications",
+    nvqf_level: 4,
+    duration_months: 4,
+    financial_model: "Subsidized Technical Training (Tuition-free under NAVTTC Prime Minister Youth Skills / DigiSkills Track)",
+    min_education: "intermediate",
+    allowed_streams: ["fa", "social_sciences_humanities", "ba_english", "general_technical_youth", "icom", "computer_it"],
+    entry_requirement: "Intermediate / Enrolled in Bachelor degree (e.g. BA English, BS Humanities, or working interns)",
+    city: "Nationwide (Online / NAVTTC Centers in Lahore, Karachi, Islamabad, Rawalpindi, Peshawar, Multan)",
+    institute: "[BENCHMARK] DigiSkills (Ministry of IT), NAVTTC Centers of Excellence, Virtual University",
+    source_url: "https://digiskills.pk/courses/content-writing",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "AI-Augmented SEO Content Creation & Keyword Intent Analysis",
+      "B2B SaaS Technical Copywriting & Whitepaper Drafting",
+      "Search Engine Optimization (Semrush, Ahrefs & SurferSEO)",
+      "High-Converting Sales Landing Page Copywriting",
+      "Client Discovery & Proposal Writing on Upwork & LinkedIn"
+    ],
+    job_opportunities: [
+      "Senior SEO Content Strategist for Global Remote Clients",
+      "B2B SaaS Technical Copywriter ($1,500 - $3,500/mo remote contracts)",
+      "Corporate Communications & PR Specialist",
+      "Content Marketing Lead at Tech Software Houses"
+    ],
+    career_prospect: "Exceptional remote export potential. Perfect upskilling course for BA English students and working interns to immediately double their income without restarting a degree.",
+    when_to_choose: "Choose if you are already enrolled in BA English, humanities, or working, and want targeted high-income skills in freelance writing, SEO, and copywriting.",
+    when_not_to_choose: "Do not choose if you dislike researching written articles, reading blogs, or editing prose.",
+    riasec_match: ["artistic", "enterprising"],
+    hobbies_match: ["writing_debate", "reading_research", "social_media_ecommerce"]
+  },
+  {
+    id: 26,
+    name: "Corporate Communications, PR & Digital Brand Publishing (Executive Diploma)",
+    type: "diploma",
+    sector: "Media & Corporate Affairs",
+    nvqf_level: 5,
+    duration_months: 6,
+    financial_model: "Executive Professional Certification / Subsidized Co-op Program",
+    min_education: "intermediate",
+    allowed_streams: ["fa", "social_sciences_humanities", "ba_english", "business_commerce", "general_technical_youth"],
+    entry_requirement: "Enrolled in University (BA / BS / BBA) or holding Intermediate with active English proficiency",
+    city: "Lahore, Islamabad, Karachi",
+    institute: "[BENCHMARK] Punjab University IMS, Institute of Business Administration (IBA), NUML Digital Media",
+    source_url: "https://hec.gov.pk/curriculum/mass-communication",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "Executive Press Release & Media Crisis Management",
+      "Corporate Internal Communications & Brand Voice Architecture",
+      "LinkedIn Thought Leadership & Executive Ghostwriting",
+      "Stakeholder Engagement & Investor Communications",
+      "Digital Publishing & Email Marketing Automation"
+    ],
+    job_opportunities: [
+      "Corporate Communications Executive in Multinational & Telecoms",
+      "Public Relations (PR) Account Manager",
+      "Executive Ghostwriter for Founders & CEOs",
+      "Digital Brand Communications Lead"
+    ],
+    career_prospect: "High corporate demand across Pakistani banks, FMCGs, software exporters, and venture-backed startups needing polished communication.",
+    when_to_choose: "Choose if you excel at written expression, relationship building, media storytelling, and want corporate executive growth.",
+    when_not_to_choose: "Do not choose if you want purely technical backend coding or dislike formal corporate stakeholder engagement.",
+    riasec_match: ["enterprising", "social"],
+    hobbies_match: ["writing_debate", "reading_research", "social_media_ecommerce"]
+  },
+  {
+    id: 27,
+    name: "UI/UX Microcopy & Digital Product Content Architecture",
+    type: "navttc_course",
+    sector: "Design & Product Management",
+    nvqf_level: 4,
+    duration_months: 3,
+    financial_model: "Subsidized High-Tech Vocational Track (PM Youth Skills Scheme)",
+    min_education: "intermediate",
+    allowed_streams: ["fa", "ba_english", "social_sciences_humanities", "computer_it", "general_technical_youth"],
+    entry_requirement: "Intermediate or ongoing Bachelor (BA English / Arts / BS / DAE)",
+    city: "Online & National CoE Centers (Islamabad, Lahore, Karachi, Faisalabad)",
+    institute: "[BENCHMARK] National Institute of Electronics (NIE), NAVTTC CoE, FAST-NUCES Tech Labs",
+    source_url: "https://navttc.gov.pk/high-tech-courses",
+    verified_date: "2026-03-01",
+    skills_to_master: [
+      "UX Microcopy for Mobile Apps & Fintech Dashboards",
+      "User Onboarding Journeys & Error State Messaging",
+      "Figma Prototype Collaboration & Design System Strings",
+      "Information Architecture & Usability Testing",
+      "Accessibility & Plain-Language Localization"
+    ],
+    job_opportunities: [
+      "UX Writer / Content Designer in Software Houses",
+      "Product Onboarding Specialist for Fintech Apps (SadaPay, Nayapay, Easypaisa)",
+      "Remote UX Copywriter for Overseas Tech Startups",
+      "Design Systems Content Architect"
+    ],
+    career_prospect: "Rapidly expanding niche paying top-tier tech salaries to English and humanities graduates without requiring engineering code.",
+    when_to_choose: "Choose if you love language, psychology, and apps, and want to work in tech software companies without writing backend code.",
+    when_not_to_choose: "Do not choose if you have zero interest in apps, digital screens, or user psychology.",
+    riasec_match: ["artistic", "investigative"],
+    hobbies_match: ["writing_debate", "drawing_design", "gaming_tech"]
   }
 ];
 
@@ -578,8 +1161,8 @@ export default function App() {
   const [lang, setLang] = useState<"en" | "ur">("en");
   const isRTL = lang === "ur";
 
-  // Tab Navigation: "home" | "questionnaire" | "counselor" | "documents"
-  const [activeTab, setActiveTab] = useState<"home" | "questionnaire" | "counselor" | "documents">("home");
+  // Tab Navigation: "home" | "questionnaire" | "counselor" | "documents" | "trends"
+  const [activeTab, setActiveTab] = useState<"home" | "questionnaire" | "counselor" | "documents" | "trends">("home");
 
   // Profile completion status
   const [hasProfile, setHasProfile] = useState(false);
@@ -589,6 +1172,8 @@ export default function App() {
   const [qData, setQData] = useState<QuestionnaireState>({
     stage: "",
     stream: "",
+    currentEducation: "BA English (Enrolled)",
+    ongoingJobOrInternship: "Active Content / Copywriting Intern",
     strongSubjects: [],
     avoidSubjects: [],
     hobbies: [],
@@ -781,6 +1366,7 @@ export default function App() {
   const [showAddDocModal, setShowAddDocModal] = useState(false);
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [docFilterType, setDocFilterType] = useState<string>("all");
+  const [monitorFilter, setMonitorFilter] = useState<"all" | "uploaded" | "missing">("all");
   const [docSearchQuery, setDocSearchQuery] = useState<string>("");
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [isAnalyzingDoc, setIsAnalyzingDoc] = useState(false);
@@ -861,6 +1447,9 @@ export default function App() {
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
   const documentFileInputRef = useRef<HTMLInputElement>(null);
+  const handleVoiceCommandDispatchRef = useRef<((cmd: string) => void) | null>(null);
+  const [voiceCommandFeedback, setVoiceCommandFeedback] = useState<string | null>(null);
+  const [hasTranscribedVoice, setHasTranscribedVoice] = useState<boolean>(false);
 
   // Save voice settings to localStorage
   useEffect(() => {
@@ -963,59 +1552,158 @@ export default function App() {
     }
   };
 
+  const speakWithServerTTS = async (cleanText: string, targetId: string | number, customLang?: "en" | "ur") => {
+    try {
+      setIsAudioLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          text: cleanText.slice(0, 800),
+          voice: "Kore"
+        })
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.audio) {
+          const audioUrl = `data:${data.mimeType || "audio/wav"};base64,${data.audio}`;
+          const audio = new Audio(audioUrl);
+          audio.playbackRate = speechRate;
+
+          audio.onplay = () => {
+            setIsAudioLoading(false);
+            setIsSpeaking(true);
+            setIsVoicePaused(false);
+            setSpeakingId(targetId);
+          };
+
+          audio.onended = () => {
+            setIsSpeaking(false);
+            setIsVoicePaused(false);
+            setSpeakingId(null);
+            setCurrentlySpeakingSnippet("");
+            currentAudioRef.current = null;
+          };
+
+          audio.onerror = () => {
+            setIsAudioLoading(false);
+            fallbackWebSpeech(cleanText, targetId, customLang);
+          };
+
+          currentAudioRef.current = audio;
+          await audio.play();
+          return;
+        }
+      }
+      fallbackWebSpeech(cleanText, targetId, customLang);
+    } catch (e) {
+      fallbackWebSpeech(cleanText, targetId, customLang);
+    } finally {
+      setIsAudioLoading(false);
+    }
+  };
+
   const fallbackWebSpeech = (cleanText: string, targetId: string | number, customLang?: "en" | "ur") => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
-      triggerToast("Voice synthesis not supported in this browser.");
+      triggerToast(lang === "ur" ? "اس براؤزر میں آواز کی سہولت دستیاب نہیں ہے۔" : "Voice synthesis not supported in this browser.");
       return;
     }
 
     const synth = window.speechSynthesis;
-    synth.cancel();
-    if (synth.paused) {
-      synth.resume();
+    try {
+      synth.cancel();
+      if (synth.paused) {
+        synth.resume();
+      }
+    } catch (e) {}
+
+    let voices = synth.getVoices();
+    if (!voices || voices.length === 0) {
+      // Chrome loads voices asynchronously
+      synth.onvoiceschanged = () => {
+        voices = synth.getVoices();
+        proceedSpeak(voices);
+      };
+      // fallback in case onvoiceschanged does not fire
+      setTimeout(() => proceedSpeak(synth.getVoices()), 250);
+      return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    const targetLang = customLang || lang;
+    proceedSpeak(voices);
 
-    // Detect available voices
-    const voices = synth.getVoices();
-    const urVoice = voices.find((v) => v.lang.toLowerCase().startsWith("ur"));
-    const enVoice = voices.find((v) => v.lang.toLowerCase().startsWith("en"));
+    function proceedSpeak(availVoices: SpeechSynthesisVoice[]) {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const targetLang = customLang || lang;
 
-    if (targetLang === "ur" && urVoice) {
-      utterance.voice = urVoice;
-      utterance.lang = "ur-PK";
-    } else if (enVoice) {
-      utterance.voice = enVoice;
-      utterance.lang = "en-US";
-    } else {
-      utterance.lang = targetLang === "ur" ? "ur-PK" : "en-US";
+      const urVoice = availVoices.find((v) => v.lang && (v.lang.toLowerCase().includes("ur") || v.lang.toLowerCase().includes("pk")));
+      const hiVoice = availVoices.find((v) => v.lang && (v.lang.toLowerCase().includes("hi") || v.lang.toLowerCase().includes("in")));
+      const enVoice = availVoices.find((v) => v.lang && (v.lang.toLowerCase().startsWith("en-") || v.lang.toLowerCase() === "en"));
+
+      if (targetLang === "ur") {
+        if (urVoice) {
+          utterance.voice = urVoice;
+          utterance.lang = "ur-PK";
+        } else if (hiVoice) {
+          // Hindi voice phonetically speaks Roman Urdu and Urdu with authentic South Asian accent
+          utterance.voice = hiVoice;
+          utterance.lang = "hi-IN";
+        } else if (enVoice) {
+          utterance.voice = enVoice;
+          utterance.lang = "en-US";
+        }
+      } else if (enVoice) {
+        utterance.voice = enVoice;
+        utterance.lang = "en-US";
+      }
+
+      utterance.rate = speechRate;
+      utterance.pitch = 1.0;
+
+      // Keep-alive timer for Chrome 14s silence bug
+      const keepAlive = setInterval(() => {
+        if (!synth.speaking) {
+          clearInterval(keepAlive);
+        } else if (synth.paused) {
+          synth.resume();
+        }
+      }, 7000);
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        setIsVoicePaused(false);
+        setSpeakingId(targetId);
+        triggerToast(lang === "ur" ? "🔊 آواز شروع ہو گئی ہے..." : "🔊 Speaking advice now...");
+      };
+      utterance.onend = () => {
+        clearInterval(keepAlive);
+        setIsSpeaking(false);
+        setIsVoicePaused(false);
+        setSpeakingId(null);
+        setCurrentlySpeakingSnippet("");
+      };
+      utterance.onerror = (e) => {
+        console.warn("Speech synthesis error event:", e);
+        clearInterval(keepAlive);
+        setIsSpeaking(false);
+        setIsVoicePaused(false);
+        setSpeakingId(null);
+        setCurrentlySpeakingSnippet("");
+      };
+
+      try {
+        synth.resume();
+        synth.speak(utterance);
+      } catch (err) {
+        console.warn("Speech synthesis error", err);
+      }
     }
-
-    utterance.rate = speechRate;
-    utterance.pitch = 1.0;
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      setIsVoicePaused(false);
-      setSpeakingId(targetId);
-    };
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsVoicePaused(false);
-      setSpeakingId(null);
-      setCurrentlySpeakingSnippet("");
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      setIsVoicePaused(false);
-      setSpeakingId(null);
-      setCurrentlySpeakingSnippet("");
-    };
-
-    synth.resume();
-    synth.speak(utterance);
   };
 
   const speakText = (text: string, id?: string | number, customLang?: "en" | "ur") => {
@@ -1033,7 +1721,7 @@ export default function App() {
     const clean = text
       .replace(/[*#_~`>]/g, "")
       .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/[•👉🛠️💼🚫📅👨‍👩‍👦💡📌⚡🇵🇰✓🎯🔍]/g, "")
+      .replace(/[•👉🛠️💼🚫📅👨‍👩‍👦💡📌⚡🇵🇰✓🎯🔍🏛️📊🌐]/g, "")
       .replace(/\n+/g, ". ")
       .trim();
 
@@ -1044,6 +1732,7 @@ export default function App() {
     if (voiceProvider === "elevenlabs" && elevenLabsApiKey.trim()) {
       speakWithElevenLabs(clean, targetId);
     } else {
+      // Instant high-performance client speech synthesis
       fallbackWebSpeech(clean, targetId, customLang);
     }
   };
@@ -1085,14 +1774,15 @@ export default function App() {
     setCurrentlySpeakingSnippet("");
   };
 
-  const toggleVoiceRecognition = () => {
+  const toggleVoiceRecognition = async () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
     if (!SpeechRecognition) {
       triggerToast(
         lang === "ur"
-          ? "براؤزر میں مائیکروفون اسپیچ ریکگنیشن کی سہولت نہیں ہے۔"
-          : "Speech recognition is not supported in this browser. Please use Chrome/Edge."
+          ? "براؤزر میں مائیکروفون اسپیچ ریکگنیشن کی سہولت نہیں ہے۔ براہ کرم گوگل کروم یا مائیکروسافٹ ایج استعمال کریں۔"
+          : "Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge."
       );
       return;
     }
@@ -1104,40 +1794,80 @@ export default function App() {
         } catch (e) {}
       }
       setIsListening(false);
+      triggerToast(lang === "ur" ? "مائیکروفون بند ہو گیا ہے۔" : "Microphone turned off.");
       return;
+    }
+
+    // Attempt permission request if available
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+      } catch (err: any) {
+        console.warn("Microphone access prompt or error:", err);
+      }
     }
 
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = lang === "ur" ? "ur-PK" : "en-US";
       recognition.interimResults = true;
-      recognition.continuous = false;
+      recognition.continuous = true;
 
       recognition.onstart = () => {
         setIsListening(true);
         triggerToast(
-          lang === "ur" ? "🎙️ مائیکروفون فعال: اب بولیں..." : "🎙️ Listening... Speak now in English or Urdu"
+          lang === "ur"
+            ? "🎙️ مائیکروفون فعال ہے: اپنا مکمل سوال بولیں۔ جب چاہیں وقفہ لے سکتے ہیں..."
+            : "🎙️ Listening continuously... Speak your question. You can pause naturally without getting cut off."
         );
       };
 
       recognition.onresult = (event: any) => {
-        let speechResult = "";
+        let transcript = "";
         for (let i = 0; i < event.results.length; i++) {
-          speechResult += event.results[i][0].transcript;
+          if (event.results[i][0]) {
+            transcript += event.results[i][0].transcript;
+          }
         }
-        if (speechResult) {
-          setInputText((prev) => (prev ? `${prev} ${speechResult}` : speechResult));
+        const cleanSpoken = transcript.trim();
+        if (cleanSpoken) {
+          setInputText(cleanSpoken);
+          setHasTranscribedVoice(true);
+          const lastIdx = event.results.length - 1;
+          if (event.results[lastIdx] && event.results[lastIdx].isFinal) {
+            if (handleVoiceCommandDispatchRef.current) {
+              handleVoiceCommandDispatchRef.current(cleanSpoken);
+            }
+          }
         }
       };
 
       recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error", event);
+        console.warn("Speech recognition error:", event.error);
         setIsListening(false);
-        triggerToast(
-          lang === "ur"
-            ? "مائیکروفون کی اجازت نہیں ملی یا آواز نہیں پہچانی گئی۔"
-            : `Mic input ended: ${event.error || "No speech detected"}`
-        );
+        if (event.error === "language-not-supported" && recognition.lang === "ur-PK") {
+          // Retry with en-US if ur-PK is not installed in OS
+          try {
+            recognition.lang = "en-US";
+            recognition.start();
+            setIsListening(true);
+            return;
+          } catch (e) {}
+        }
+        if (event.error === "not-allowed" || event.error === "permission-denied") {
+          triggerToast(
+            lang === "ur"
+              ? "مائیکروفون کی اجازت درکار ہے۔ براؤزر کے ایڈریس بار میں کیمرہ/مائیک کے نشان پر کلک کر کے Allow کریں۔"
+              : "Microphone permission needed. Please allow microphone in your browser URL bar."
+          );
+        } else if (event.error === "no-speech") {
+          triggerToast(
+            lang === "ur" ? "کوئی آواز سنائی نہیں دی۔ براہ کرم دوبارہ واضح بولیں۔" : "No speech detected. Please speak closer to microphone."
+          );
+        } else {
+          triggerToast(lang === "ur" ? `مائیکروفون کیفیت: ${event.error}` : `Mic notice: ${event.error}`);
+        }
       };
 
       recognition.onend = () => {
@@ -1146,9 +1876,12 @@ export default function App() {
 
       recognitionRef.current = recognition;
       recognition.start();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to start speech recognition", err);
       setIsListening(false);
+      triggerToast(
+        lang === "ur" ? "مائیکروفون شروع کرنے میں دشواری پیش آئی۔" : "Could not initialize microphone. Please check permissions."
+      );
     }
   };
 
@@ -1158,15 +1891,15 @@ export default function App() {
       role: "assistant",
       content:
         lang === "ur"
-          ? "خوش آمدید! میں کیریئرلی اے آئی ہوں۔ میں ایک تعلیمی و فنی کونسلر ہوں جو آپ کے مضامین، مشاغل اور دستاویزات کا جائزہ لے کر یہ بتاتا ہے کہ کون سا شعبہ آپ کے لیے موزوں ہے اور کون سا نہیں۔\n\nبراہِ کرم اوپر دیا گیا 'جامع سوالنامہ' مکمل کریں یا اپنے اسناد و سی وی اپلوڈ کریں تاکہ ہم آپ کے مشاغل اور تعلیمی اسناد کے مطابق رہنمائی فراہم کر سکیں۔"
-          : "Welcome! I'm Careerly AI, your personal education and career counselor. I help you discover which academic and skills paths to CHOOSE and which NOT to choose based on your hobbies, strengths, and certificates.\n\nPlease complete the questionnaire or explore the Documents & CV Portfolio to begin!",
+          ? "السلام علیکم! خوش آمدید! میں کیریئرلی AI ہوں — آپ کا ذاتی تعلیمی و کیریئر کونسلر اور مینٹور۔\n\nمیں آپ کو کسی کورس کی زبردستی فہرست دینے کے بجائے حقیقی ذاتی رہنمائی، یونیورسٹیوں کے موازنے (NUST, FAST, LUMS, AKU وغیرہ)، داخلہ ٹیسٹوں (MDCAT/ECAT)، اسکالرشپس، اور کیریئر کی درست سمت میں قدم بہ قدم مدد فراہم کروں گا۔\n\nآپ مجھ سے اردو، رومن اردو یا انگریزی میں کوئی بھی سوال بلا جھجھک پوچھ سکتے ہیں یا آواز کے مائیکروفون کے ذریعے بات کر سکتے ہیں!"
+          : "Assalam-o-Alaikum & Welcome! I'm Careerly AI — your personal 1-on-1 education & career mentor.\n\nUnlike simple catalog bots, I don't just dump courses on you. I listen to your ambitions, compare universities (NUST, FAST, LUMS, AKU, UET), guide you on entry tests (MDCAT, ECAT, NET), evaluate scholarships, and help you find the right future path.\n\nAsk me anything in English, Urdu, or Roman Urdu, or click the mic button to speak with me!",
       options: [
-        "Start In-Depth Questionnaire",
-        "View Document AI Recommendations",
-        "Matric (9th/10th)",
-        "FSc / Intermediate (11th/12th)",
-        "University Undergrad",
-        "Graduate / Skills"
+        "🧭 مجھے کیریئر رہنمائی چاہیے (Help Me Choose)",
+        "🩺 ایف ایس سی پری میڈیکل کے بعد کے مواقع",
+        "💻 کمپیوٹر سائنس بمقابلہ سافٹ ویئر انجینئرنگ",
+        "🏛️ فاسٹ بمقابلہ نسٹ کا موازنہ",
+        "🌐 گھر بیٹھے آن لائن کمائی اور فری لانسنگ",
+        "📝 جامع سوالنامہ شروع کریں"
       ]
     }
   ]);
@@ -1236,6 +1969,13 @@ export default function App() {
   };
 
   const formatStreamLabel = (val: string) => {
+    if (!val) return "";
+    return val
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  const formatHobbyLabel = (val: string) => {
     if (!val) return "";
     return val
       .replace(/_/g, " ")
@@ -1969,11 +2709,11 @@ This guidance is advisory. Fee waivers, student stipends, and employment offers 
     triggerToast("Text summary downloaded!");
   };
 
-  const handleOpenAddDocModal = () => {
+  const handleOpenAddDocModal = (typePrefill?: "cv" | "marksheet" | "certificate" | "diploma" | "portfolio") => {
     setEditingDocId(null);
     setNewDocForm({
       name: "",
-      type: "certificate",
+      type: typePrefill || "certificate",
       title: "",
       issuer: "",
       year: new Date().getFullYear().toString(),
@@ -2266,41 +3006,143 @@ This guidance is advisory. Fee waivers, student stipends, and employment offers 
       });
     }
 
-    // Evaluate matching against SAMPLE_PROGRAMS
+    // Evaluate matching against SAMPLE_PROGRAMS with strict stream-first prioritization
+    // Evaluate matching against SAMPLE_PROGRAMS with strict stream-first prioritization
     SAMPLE_PROGRAMS.forEach((prog) => {
       let fitScore = 0;
       const reasonsFit: string[] = [];
 
-      // Check education match
-      if (answers.stage === "matric" && prog.min_education === "matric") {
-        fitScore += 2;
-        reasonsFit.push(lang === "ur" ? "میٹرک پاس طلبہ کے لیے مکمل موزوں ہے۔" : "Directly eligible with Matriculation.");
-      } else if (answers.stage !== "matric") {
-        fitScore += 2;
+      // 1. STREAM COMPATIBILITY (Heaviest Factor)
+      const hasDirectStreamMatch = prog.allowed_streams.includes(answers.stream);
+      const isUniversalStream = prog.allowed_streams.includes("any");
+
+      if (hasDirectStreamMatch) {
+        fitScore += 35;
+        reasonsFit.push(
+          lang === "ur"
+            ? `آپ کے مخصوص تعلیمی گروپ (${formatStreamLabel(answers.stream)}) کے لیے سب سے موزوں ترین تصدیق شدہ راستہ ہے۔`
+            : `Specifically designed for your academic stream (${formatStreamLabel(answers.stream)}).`
+        );
+      } else if (isUniversalStream) {
+        fitScore += 8;
+        reasonsFit.push(
+          lang === "ur"
+            ? "تمام تعلیمی گروپس کے طلبہ کے لیے کھلا عام کورس ہے۔"
+            : "Accessible as a universal cross-disciplinary track."
+        );
+      } else {
+        // Stream mismatch penalty - prevent unrelated tracks from overtaking student stream
+        fitScore -= 40;
       }
 
-      // Check stream match
-      if (prog.allowed_streams.includes("any") || prog.allowed_streams.includes(answers.stream)) {
-        fitScore += 2;
-        reasonsFit.push(lang === "ur" ? `آپ کے تعلیمی گروپ (${formatStreamLabel(answers.stream)}) سے ہم آہنگ ہے۔` : `Matches your academic stream (${formatStreamLabel(answers.stream)}).`);
+      // 2. EDUCATION LEVEL & PREREQUISITES
+      if (answers.stage === prog.min_education) {
+        fitScore += 12;
+        reasonsFit.push(lang === "ur" ? "تعلیمی مرحلے کے اعتبار سے براہِ راست اہل ہیں۔" : "Exact educational stage eligibility match.");
+      } else if (answers.stage === "intermediate" && prog.min_education === "matric") {
+        fitScore += 6;
+      } else if (answers.stage === "university" || answers.stage === "graduate") {
+        fitScore += 6;
+      } else if (answers.stage === "matric" && prog.min_education === "intermediate") {
+        fitScore -= 35; // Matric student cannot directly enroll in university degrees
       }
 
-      // Check hobbies match
+      // 3. HOBBIES & PERSONAL INTERESTS
       const commonHobbies = prog.hobbies_match.filter((h) => answers.hobbies.includes(h));
       if (commonHobbies.length > 0) {
-        fitScore += 3;
-        reasonsFit.push(lang === "ur" ? "آپ کے ذاتی مشاغل اور دلچسپیوں سے براہِ راست میل کھاتا ہے۔" : "Directly aligns with your personal hobbies & leisure interests.");
+        fitScore += commonHobbies.length * 7;
+        reasonsFit.push(
+          lang === "ur"
+            ? `آپ کے منتخب مشاغل (${commonHobbies.map(formatHobbyLabel).join("، ")}) سے براہِ راست ہم آہنگ ہے۔`
+            : `Directly matches your personal hobbies (${commonHobbies.map(formatHobbyLabel).join(", ")}).`
+        );
       }
 
-      // Check certificate match
+      // 4. WORKING STYLE & RIASEC ALIGNMENT (Safely mapped without undefined personality crash)
+      const userTraits =
+        answers.workingStyle === "hands_on_practical"
+          ? ["realistic", "investigative"]
+          : answers.workingStyle === "analytical_logic"
+          ? ["investigative", "conventional"]
+          : answers.workingStyle === "people_creative"
+          ? ["artistic", "social", "enterprising"]
+          : [];
+
+      if (userTraits.some((t) => prog.riasec_match.includes(t))) {
+        fitScore += 8;
+        reasonsFit.push(
+          lang === "ur"
+            ? "آپ کے کام اور سیکھنے کے پسندیدہ انداز سے میل کھاتا ہے۔"
+            : "Directly aligns with your preferred working style and problem-solving method."
+        );
+      }
+
+      // 5. STRONG SUBJECTS ALIGNMENT (Flexible substring matching)
+      const hasStrong = (term: string) =>
+        answers.strongSubjects.some((s) => s.toLowerCase().includes(term.toLowerCase()));
+
+      if (hasStrong("bio") && (prog.sector === "Allied Healthcare" || prog.name.includes("Health") || prog.name.includes("Medical"))) {
+        fitScore += 18;
+        reasonsFit.push(lang === "ur" ? "حیاتیات (Biology) میں آپ کی مہارت اس فیلڈ کی بنیادی ضرورت ہے۔" : "Leverages your stated strength in Biology.");
+      }
+      if ((hasStrong("comput") || hasStrong("cod")) && prog.sector === "Information Technology") {
+        fitScore += 18;
+        reasonsFit.push(lang === "ur" ? "کمپیوٹر سائنس میں آپ کی مضبوط گرفت اس شعبے میں برتری دلائے گی۔" : "Capitalizes on your computer science proficiency.");
+      }
+      if (hasStrong("math") && (prog.sector === "Information Technology" || prog.sector === "Manufacturing & Engineering" || prog.sector === "Business & Commerce")) {
+        fitScore += 14;
+        reasonsFit.push(lang === "ur" ? "ریاضی میں آپ کی مہارت اس فیلڈ کے منطقی مسائل حل کرنے میں کلیدی کردار ادا کرے گی۔" : "Strong foundation in Mathematics.");
+      }
+      if (hasStrong("physic") && (prog.sector === "Manufacturing & Engineering" || prog.sector === "Renewable Energy")) {
+        fitScore += 14;
+        reasonsFit.push(lang === "ur" ? "طبیعیات (Physics) میں دلچسپی تکنیکی انجینئرنگ کے لیے بہترین ہے۔" : "Reinforced by your Physics aptitude.");
+      }
+      if (hasStrong("chem") && (prog.sector === "Allied Healthcare" || prog.name.includes("Pharm") || prog.name.includes("Biotech"))) {
+        fitScore += 14;
+        reasonsFit.push(lang === "ur" ? "کیمسٹری میں آپ کی دلچسپی ادویات اور فارماسیوٹیکل فیلڈ کے لیے کلیدی ہے۔" : "Reinforced by Chemistry aptitude.");
+      }
+      if ((hasStrong("busin") || hasStrong("account")) && prog.sector === "Business & Commerce") {
+        fitScore += 18;
+        reasonsFit.push(lang === "ur" ? "کامرس اور بزنس میں آپ کی دلچسپی اس کیریئر کے تقاضوں سے میل کھاتی ہے۔" : "Directly supported by your business acumen.");
+      }
+      if ((hasStrong("draw") || hasStrong("art") || hasStrong("design")) && (prog.sector === "Creative Arts" || prog.name.includes("Design"))) {
+        fitScore += 18;
+        reasonsFit.push(lang === "ur" ? "تخلیقی صلاحیت اور آرٹس اس فیلڈ کی جان ہے۔" : "Matches your creative and artistic talents.");
+      }
+      if ((hasStrong("english") || hasStrong("social") || hasStrong("urdu")) && (prog.sector === "Social Sciences" || prog.name.includes("Law") || prog.name.includes("Psychology"))) {
+        fitScore += 16;
+        reasonsFit.push(lang === "ur" ? "سماجی علوم اور زبان دانی کی مہارت اس فیلڈ میں برتری دلائے گی۔" : "Complemented by strong language & analytical writing.");
+      }
+
+      // 6. AVOID SUBJECTS (CRUCIAL NEGATIVE FILTERING)
+      const hasAvoid = (term: string) =>
+        answers.avoidSubjects.some((s) => s.toLowerCase().includes(term.toLowerCase()));
+
+      if (prog.sector === "Information Technology" && (hasAvoid("cod") || hasAvoid("program"))) {
+        fitScore -= 50;
+      }
+      if ((prog.sector === "Information Technology" || prog.sector === "Manufacturing & Engineering" || prog.sector === "Renewable Energy") && hasAvoid("math")) {
+        fitScore -= 40;
+      }
+      if ((prog.sector === "Allied Healthcare" || prog.name.includes("Medical") || prog.name.includes("Doctor")) && hasAvoid("bio")) {
+        fitScore -= 60;
+      }
+      if ((prog.sector === "Renewable Energy" || prog.sector === "Automotive" || prog.sector === "Electronics & Hardware" || prog.name.includes("Solar") || prog.name.includes("Electrician")) && hasAvoid("physical_outdoor")) {
+        fitScore -= 45;
+      }
+      if ((prog.sector === "Business & Commerce" || prog.name.includes("Marketing") || prog.name.includes("Sales")) && hasAvoid("public_speaking")) {
+        fitScore -= 35;
+      }
+      if ((prog.sector === "Creative Arts" || prog.name.includes("Design") || prog.name.includes("Graphic")) && hasAvoid("drawing")) {
+        fitScore -= 35;
+      }
+
+      // 7. CERTIFICATES & UPLOADED PORTFOLIO (Light booster, does not override stream)
       if (answers.existingCertificates.length > 0) {
-        fitScore += 1;
-        reasonsFit.push(lang === "ur" ? "آپ کے پاس موجودہ بنیادی اسناد اس کورس میں معاون ثابت ہوں گی۔" : "Your prior certificates give you an advantage.");
+        fitScore += 3;
       }
-
-      // Check uploaded document match
       if (answers.uploadedDoc) {
-        fitScore += 2;
+        fitScore += 4;
         reasonsFit.push(
           lang === "ur"
             ? `آپ کے اپلوڈ کردہ ریکارڈ (${answers.uploadedDoc.detectedTitle}) سے اہلیت کی تصدیق ہوتی ہے۔`
@@ -2308,45 +3150,44 @@ This guidance is advisory. Fee waivers, student stipends, and employment offers 
         );
       }
 
-      // Penalize if student wants to avoid core area
-      if (
-        (prog.sector === "Information Technology" && answers.avoidSubjects.includes("coding")) ||
-        (prog.sector === "Renewable Energy" && answers.avoidSubjects.includes("physical_outdoor"))
-      ) {
-        fitScore -= 2;
-      }
-
       const matchItem = {
         ...prog,
+        fitScore,
         reasonsFit: reasonsFit.join(" "),
         firstStep:
           lang === "ur"
-            ? `نیوٹیک پورٹل (${prog.source_url}) پر داخلہ شیڈول دیکھیں اور ${prog.institute} سے تصدیق کریں۔`
-            : `Review course prospectus on NAVTTC official portal (${prog.source_url}) and verify with ${prog.institute}.`
+            ? `متعلقہ پورٹل (${prog.source_url}) پر داخلہ شیڈول دیکھیں اور ${prog.institute} سے تصدیق کریں۔`
+            : `Review official prospectus on portal (${prog.source_url}) and verify details with ${prog.institute}.`
       };
 
-      if (fitScore >= 4) {
+      if (fitScore >= 18) {
         strongFit.push(matchItem);
-      } else if (fitScore >= 2) {
+      } else if (fitScore >= 5) {
         possible.push({
+          ...matchItem,
           name: prog.name,
-          type: "navttc_course",
+          type: prog.type,
+          fitScore,
           why:
             lang === "ur"
               ? "بنیادی تعلیمی اہلیت موجود ہے، لیکن اس فیلڈ کے لیے پریکٹیکل مشق اور پورٹ فولیو بنانا ضروری ہوگا۔"
               : "Meets baseline educational qualifications, but requires dedicated hands-on project practice.",
           strengthenStep:
             lang === "ur"
-              ? "یوٹیوب یا مفت کورسز سے تعارفی ماڈیولز دیکھ کر اپنی دلچسپی کا جائزہ لیں۔"
+              ? "تعارفی ماڈیولز دیکھ کر اپنی دلچسپی اور بنیاد کو مزید مضبوط کریں۔"
               : "Explore introductory modules online to confirm your ongoing curiosity."
         });
       }
     });
 
-    const finalStrongFit = strongFit.slice(0, 3);
-    const finalPossible = possible.slice(0, 2);
-    const finalNotRightNow = notRightNow.slice(0, 2);
-    const topChoice = finalStrongFit[0] || SAMPLE_PROGRAMS[1];
+    // CRITICAL: Sort by highest fitScore descending so the best match is ALWAYS at index 0!
+    strongFit.sort((a, b) => b.fitScore - a.fitScore);
+    possible.sort((a, b) => b.fitScore - a.fitScore);
+
+    const finalStrongFit = strongFit.length > 0 ? strongFit.slice(0, 4) : possible.slice(0, 4);
+    const finalPossible = possible.filter((p) => !finalStrongFit.some((s) => s.id === p.id)).slice(0, 3);
+    const finalNotRightNow = notRightNow.slice(0, 3);
+    const topChoice = finalStrongFit[0] || SAMPLE_PROGRAMS[0];
 
     // 3-Phase Roadmap (General & Realistic)
     const roadmap = {
@@ -2446,6 +3287,14 @@ Ask me anything about essential skills to master, realistic job opportunities, w
     const text = textToSend || inputText;
     if (!text.trim()) return;
 
+    if (recognitionRef.current && isListening) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+      setIsListening(false);
+    }
+    setHasTranscribedVoice(false);
+
     const userMsg: Message = { role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInputText("");
@@ -2462,7 +3311,7 @@ Ask me anything about essential skills to master, realistic job opportunities, w
     // 1. Attempt Server-Side Gemini 3.8 Flash Generation
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s for deep, thorough response
 
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -2474,14 +3323,17 @@ Ask me anything about essential skills to master, realistic job opportunities, w
           studentProfile: {
             stage: qData.stage,
             stream: qData.stream,
+            currentEducation: qData.currentEducation || "BA English (Enrolled)",
+            ongoingJobOrInternship: qData.ongoingJobOrInternship || "Active Intern / Freelancer",
             strongSubjects: qData.strongSubjects,
             avoidSubjects: qData.avoidSubjects,
             hobbies: qData.hobbies,
             city: qData.city || "your area",
-            topChoiceName: top.name
+            topChoiceName: top.name,
+            portfolioLinks
           },
           documents: studentDocuments,
-          conversationHistory: messages.slice(-4)
+          conversationHistory: messages.slice(-6)
         })
       });
 
@@ -2516,6 +3368,137 @@ Ask me anything about essential skills to master, realistic job opportunities, w
       speakText(botResponse, Date.now());
     }
   };
+
+  // Voice Command & Spoken Question Dispatcher
+  const handleVoiceCommandDispatch = (spoken: string) => {
+    const s = spoken.toLowerCase().trim();
+    if (!s) return;
+
+    setVoiceCommandFeedback(`Heard: "${spoken.slice(0, 45)}..."`);
+    setTimeout(() => setVoiceCommandFeedback(null), 4000);
+
+    // 1. Career Trends Chart Navigation
+    if (
+      s.includes("trend") ||
+      s.includes("chart") ||
+      s.includes("demand") ||
+      s.includes("salary") ||
+      s.includes("مارکیٹ") ||
+      s.includes("رجحان") ||
+      s.includes("چارٹ")
+    ) {
+      setActiveTab("trends");
+      triggerToast(
+        lang === "ur"
+          ? "📊 صوتی کمانڈ: پاکستان کیریئر ڈیمانڈ و تنخواہ چارٹ کھول دیا گیا ہے۔"
+          : "📊 Voice Command: Switched to Career Demand & Trends Chart."
+      );
+      speakText(lang === "ur" ? "مارکیٹ ڈیمانڈ چارٹ کھول دیا گیا ہے۔" : "Career Demand Radar opened.", "voice-cmd-trends");
+      return;
+    }
+
+    // 2. Personal Counselor Chat Navigation
+    if (
+      s === "counselor" ||
+      s === "chat" ||
+      s.includes("open chat") ||
+      s.includes("open counselor") ||
+      s.includes("talk to counselor") ||
+      s.includes("bhai") ||
+      s.includes("کونسلر") ||
+      s.includes("چیٹ")
+    ) {
+      setActiveTab("counselor");
+      triggerToast(
+        lang === "ur"
+          ? "💬 صوتی کمانڈ: پرسنل کونسلر چیٹ کھول دی گئی ہے۔"
+          : "💬 Voice Command: Switched to Personal Counselor Chat."
+      );
+      return;
+    }
+
+    // 3. Questionnaire Navigation
+    if (
+      s.includes("questionnaire") ||
+      s.includes("start test") ||
+      s.includes("take quiz") ||
+      s.includes("assessment") ||
+      s.includes("سوالنامہ") ||
+      s.includes("ٹیسٹ")
+    ) {
+      setActiveTab("questionnaire");
+      setWizardStep(1);
+      triggerToast(
+        lang === "ur"
+          ? "📝 صوتی کمانڈ: جامع سوالنامہ کھول دیا گیا ہے۔"
+          : "📝 Voice Command: Switched to 9-Step Assessment."
+      );
+      return;
+    }
+
+    // 4. Documents & Portfolio Navigation
+    if (
+      s.includes("document") ||
+      s.includes("certificate") ||
+      s.includes("marksheet") ||
+      s.includes("portfolio") ||
+      s.includes("اسناد") ||
+      s.includes("سرٹیفکیٹ")
+    ) {
+      setActiveTab("documents");
+      triggerToast(
+        lang === "ur"
+          ? "📁 صوتی کمانڈ: اسناد و پورٹ فولیو ہب کھول دیا گیا ہے۔"
+          : "📁 Voice Command: Switched to Documents Portfolio."
+      );
+      return;
+    }
+
+    // 5. Home Navigation
+    if (
+      s.includes("home") ||
+      s.includes("main page") ||
+      s.includes("overview") ||
+      s.includes("مین پیج") ||
+      s.includes("ہوم")
+    ) {
+      setActiveTab("home");
+      triggerToast(
+        lang === "ur"
+          ? "🏠 صوتی کمانڈ: ہوم پیج پر منتقل ہو گئے۔"
+          : "🏠 Voice Command: Switched to Overview."
+      );
+      return;
+    }
+
+    // 6. Language Switching
+    if (s.includes("switch to urdu") || s.includes("urdu mein") || s.includes("اردو")) {
+      setLang("ur");
+      triggerToast("زبان اردو پر تبدیل کر دی گئی ہے۔");
+      return;
+    }
+    if (s.includes("switch to english") || s.includes("in english") || s.includes("english")) {
+      setLang("en");
+      triggerToast("Language switched to English.");
+      return;
+    }
+
+    // 7. Spoken Career Question / Dictation:
+    // Transcribe into written form in the input box. NEVER auto-send!
+    // The user can review, edit any spelling mistakes, and explicitly click "Approve & Send".
+    setActiveTab("counselor");
+    setInputText(spoken);
+    setHasTranscribedVoice(true);
+    triggerToast(
+      lang === "ur"
+        ? "🎙️ آواز تحریر میں درج ہو گئی! املا چیک کریں اور 'منظور کریں اور بھیجیں' پر کلک کریں۔"
+        : "🎙️ Voice transcribed into text! Review for any errors, then click 'Approve & Send'."
+    );
+  };
+
+  useEffect(() => {
+    handleVoiceCommandDispatchRef.current = handleVoiceCommandDispatch;
+  });
 
   const getDynamicFollowupOptions = (query: string, currentLang: "en" | "ur"): string[] => {
     const q = query.toLowerCase();
@@ -2572,6 +3555,166 @@ Ask me anything about essential skills to master, realistic job opportunities, w
     const userDocRef = topDoc
       ? `"${topDoc.detectedTitle}" (${topDoc.gradeOrMarks || "Verified"}, ${topDoc.confidenceScore}% Confidence)`
       : "your uploaded records";
+
+    // 00. BA ENGLISH, ONGOING DEGREES, INTERNSHIPS & SKILL-ENHANCEMENT (NO DEGREE RESTART)
+    if (
+      q.includes("ba english") ||
+      q.includes("english") ||
+      q.includes("copywriting") ||
+      q.includes("content") ||
+      q.includes("intern") ||
+      q.includes("upskill") ||
+      q.includes("earn more") ||
+      q.includes("already doing") ||
+      q.includes("ongoing") ||
+      q.includes("degree nahi") ||
+      (qData.currentEducation && qData.currentEducation.toLowerCase().includes("english") && (q.includes("course") || q.includes("kya karu") || q.includes("guide")))
+    ) {
+      return lang === "ur"
+        ? `✍️ **بی اے انگلش طلبہ و انٹرنز کے لیے براہِ راست اسکل کورسز (نیا ڈگری شروع نہ کریں):**
+
+آپ کو 4 سالہ نئی ڈگری کی قطعاً ضرورت نہیں ہے۔ موجودہ بی اے انگلش کے ساتھ فوری آمدنی بڑھانے کے 3 مصدقہ کورسز:
+
+• **SEO کنٹینٹ اسٹریٹجی و کاپی رائٹنگ (DigiSkills / NAVTTC NVQF 4):** بلاگز، لینڈنگ پیجز اور ای کامرس پروڈکٹ ڈسکرپشنز (ماہانہ 80k تا 250k PKR)۔
+• **UI/UX مائیکرو کاپی و ڈیجیٹل پروڈکٹ کنٹینٹ:** سافٹ ویئر ایپس اور فگما میں انگلش یوزر فلو تحریر (150k تا 350k PKR ریموٹ)۔
+• **کارپوریٹ پی آر و بزنس کمیونیکیشن (ایگزیکٹو ڈپلومہ):** انٹرنیشنل کلائنٹس کی ای میل مہمات اور بی ٹو بی برانڈ پروپوزل۔
+
+🎯 **اگلا عملی قدم:** Upwork یا LinkedIn پر 3 نمونہ آرٹیکلز کا لائیو پورٹ فولیو منسلک کریں۔`
+        : `✍️ **Targeted Upskilling Courses for BA English & Working Interns:**
+
+You do NOT need to restart another 4-year degree. Leverage your ongoing BA English & internship with these high-ROI micro-credentials:
+
+• **SEO Content Strategy & Copywriting (DigiSkills / NAVTTC Level 4):** Write landing pages, B2B articles & email funnels (Rs. 80k – 250k+ local/remote).
+• **UI/UX Microcopy & Product Writing (3-Month Intensive):** Write in-app copy, button CTAs, and onboarding flows inside Figma (Rs. 150k – 350k+).
+• **Corporate Communications & PR (Executive Diploma):** Manage brand voice, investor decks, and digital newsletters for software houses.
+• **Free Verified Certifications:** Google Digital Marketing, HubSpot Content Marketing, and DigiSkills Freelancing.
+
+🎯 **Actionable Next Step:** Create a 1-page Notion / Google Drive portfolio with 3 writing samples from your internship to pitch remote clients.`;
+    }
+
+    // 0a. WARM GREETINGS & CASUAL INTROS
+    if (
+      q === "hi" ||
+      q === "hello" ||
+      q === "hey" ||
+      q.includes("salam") ||
+      q.includes("assalam") ||
+      q.includes("kya haal") ||
+      q.includes("kaise ho") ||
+      q.includes("کیسے ہو") ||
+      q.includes("سلام")
+    ) {
+      return lang === "ur"
+        ? `وعلیکم السلام و رحمتہ اللہ! خوش آمدید! میں کیریئرلی AI، آپ کا مخلص اور ہمدرد ذاتی تعلیمی و کیریئر کونسلر ہوں۔
+        
+میں آپ کو میٹرک، ایف ایس سی، آئی سی ایس، بی کام، یا گریجویشن کے بعد صحیح شعبے کا انتخاب کرنے، داخلہ ٹیسٹوں (MDCAT / ECAT / NET)، یونیورسٹیوں کے موازنے، اور ملازمت و فری لانسنگ کے مواقع میں مکمل مدد فراہم کروں گا۔
+
+آپ کس تعلیمی مرحلے میں ہیں اور کس بات میں رہنمائی چاہتے ہیں؟ کھل کر بتائیے!`
+        : `Walaikum Assalam & Hello! Welcome! I am Careerly AI, your personal 1-on-1 career counselor and educational mentor.
+
+I am here to guide you through university admissions (NUST, FAST, LUMS, AKU, etc.), choosing between medical, computing, engineering, commerce, or creative fields, entry test prep (MDCAT/ECAT/NET), scholarships, and freelancing.
+
+How can I help you today? Tell me what stage you are at, or ask any question you have on your mind!`;
+    }
+
+    // 0b. GENERAL GUIDANCE / "MUJHE GUIDE KARO" / CAREER CONFUSION (ROMAN URDU & ENGLISH)
+    if (
+      q.includes("guidance") ||
+      q.includes("guidence") ||
+      q.includes("guide") ||
+      q.includes("kya karu") ||
+      q.includes("kya karna chahiye") ||
+      q.includes("samajh nahi") ||
+      q.includes("samajh nhi") ||
+      q.includes("confus") ||
+      q.includes("tension") ||
+      q.includes("batao") ||
+      q.includes("konsa") ||
+      q.includes("kaunsa") ||
+      q.includes("career") ||
+      q.includes("رہنمائی") ||
+      q.includes("مشورہ")
+    ) {
+      return lang === "ur"
+        ? `🤝 **آپ کے کیریئر اور مستقبل کے لیے ایک مخلص اور جامع مشورہ:**
+
+سب سے پہلے بالکل پریشان نہ ہوں۔ پاکستان میں طلبہ کے لیے بہت سے شاندار اور کامیاب راستے موجود ہیں:
+
+1. **اگر آپ میڈیکل پس منظر (FSc Pre-Medical) سے ہیں:**
+   • صرف MBBS تک محدود نہ رہیں۔ **BS Nursing** (عالمی طلب اور فی الفور روزگار)، **DPT** (ڈاکٹر آف فزیکل تھراپی)، **Pharm-D** (فارمیسی)، اور **Biotechnology / MLT** بہترین متبادل ہیں۔
+2. **اگر آپ انجینئرنگ یا کمپیوٹر (ICS / Pre-Engineering) سے ہیں:**
+   • **BS Computer Science / Software Engineering / AI:** پاکستان کا سب سے بڑا ایکسپورٹ سیکٹر ہے۔ FAST، NUST، اور COMSATS سرفہرست ہیں۔
+   • **پریکٹیکل فری لانسنگ:** Full Stack Web اور Python سیکھ کر آپ ڈگری کے دوران ہی ریموٹ کام شروع کر سکتے ہیں۔
+3. **اگر آپ کامرس یا آرٹس (I.Com / FA) سے ہیں:**
+   • **FinTech اور Accounting & Finance (ACCA):** بینکنگ اور مالیاتی اداروں میں مستقل ڈیمانڈ۔
+   • **UI/UX Design اور Digital Marketing:** بغیر کوڈنگ کے بہترین کمائی والے تخلیقی شعبے۔
+
+💡 **میرا مشورہ:** اپنی ذاتی دلچسپی کو ترجیح دیں۔ جس فیلڈ میں آپ شوق سے محنت کریں گے، اسی میں برتری حاصل ہوگی۔ 
+
+آپ اپنے تعلیمی نمبر یا مخصوص فیلڈ کے بارے میں بتائیے، میں آپ کو قدم بہ قدم مکمل روڈ میپ بنا کر دوں گا!`
+        : `🤝 **Personal Career Guidance & Holistic Decision Framework:**
+
+First, take a deep breath. Career confusion is completely natural at this stage, and there are many high-potential pathways in Pakistan:
+
+1. **If you are from a Medical Background (FSc Pre-Medical):**
+   • Do not get disheartened if MBBS merit is tight. Look into **BS Nursing** (global shortage and high starting salaries), **Doctor of Physical Therapy (DPT)**, **Pharm-D**, and **BS Biotechnology / Medical Lab Technology (MLT)**.
+2. **If you are from Computing / Engineering (ICS / Pre-Eng):**
+   • **BS Computer Science / Software Engineering / AI:** Tremendous corporate and international remote job demand. Top institutions: FAST-NUCES, NUST, COMSATS, ITU.
+   • Practical projects on GitHub and freelance skills matter 10x more than theoretical grades.
+3. **If you are from Commerce or Humanities (I.Com / FA):**
+   • **BS Accounting & Finance / ACCA / BBA:** Direct routes into corporate finance, banking, and multinational FMCGs.
+   • **UI/UX Design & Digital Marketing:** High-demand creative tracks with lucrative remote client contracts.
+
+💡 **My Golden Rule as your Mentor:** "Skill + Portfolio beats degree title every single time." 
+
+Which of these directions resonates most with your heart and current marks? Tell me, and we'll craft your exact step-by-step strategy!`;
+    }
+
+    // 0c. MEDICAL SPECIFIC GUIDANCE (MBBS, BDS, DPT, PHARM-D, NURSING)
+    if (
+      q.includes("medical") ||
+      q.includes("mbbs") ||
+      q.includes("bds") ||
+      q.includes("dpt") ||
+      q.includes("pharm") ||
+      q.includes("nursing") ||
+      q.includes("biotech") ||
+      q.includes("میڈیکل")
+    ) {
+      return lang === "ur"
+        ? `🩺 **میڈیکل اور الائیڈ ہیلتھ سائنسز کے کیریئر کے لیے مکمل رہنمائی:**
+
+پاکستان میں ہر سال تقریباً 2 لاکھ طلبہ MDCAT دیتے ہیں جبکہ سرکاری میڈیکل کالجوں میں نشستیں محدود ہوتی ہیں۔ اس لیے حکمت عملی سے سوچنا ضروری ہے:
+
+1. **ایم بی بی ایس اور بی ڈی ایس (MBBS / BDS):**
+   • میرٹ فارمولا: 50% MDCAT + 40% FSc + 10% میٹرک۔ اگر میرٹ نہ بنے تو بھاری پرائیویٹ فیسوں کے بجائے درج ذیل اعلیٰ متبادل شعبوں پر غور کریں۔
+2. **بی ایس نرسنگ (BS Nursing - 4 سالہ HEC / PNC ڈگری):**
+   • اس وقت دنیا بھر میں (برطانیہ، امریکہ، گلف اور پاکستان) نرسنگ کی شدید طلب ہے۔ معروف اسپتال مکمل ٹیوشن معافی اور ماہانہ الاؤنس دیتے ہیں۔
+3. **ڈاکٹر آف فزیکل تھراپی (DPT - 5 سالہ کلینیکل ڈگری):**
+   • بحالی صحت، ہڈیوں کے جوڑوں اور اسپورٹس انجریز کے ماہرین۔ اپنا ذاتی کلینک کھولنے کے بہترین مواقع۔
+4. **فارمیسی (Pharm-D - 5 سالہ ڈگری):**
+   • فارماسیوٹیکل انڈسٹری، کلینیکل ریسرچ اور ہاسپٹل فارماسسٹ کے طور پر باوقار مقام۔
+5. **بائیوٹیکنالوجی و میڈیکل لیب ٹیکنالوجی (BS Biotech / MLT):**
+   • جینیٹکس، ڈی این اے ٹیسٹنگ اور تشخیصی لیبارٹریز (شوکت خانم، آغا خان، چغتائی لیب) میں ریسرچ سائنسدان۔
+
+آپ کے FSc میں کتنے متوقع نمبر ہیں تاکہ ہم اس کے مطابق آپ کا داخلہ پلان تیار کریں؟`
+        : `🩺 **Comprehensive Medical & Allied Healthcare Career Guide:**
+
+In Pakistan, over 200,000 students sit for the MDCAT for limited public MBBS seats. Having strategic, high-demand clinical alternatives is essential:
+
+1. **MBBS & BDS Realities:**
+   • Merit: 50% MDCAT + 40% FSc + 10% Matric. If public merit is out of reach, avoid crippling private debt when stellar clinical alternatives exist.
+2. **BS Nursing (4-Year HEC / PNC Accredited Degree):**
+   • Highest global visa sponsorship and local hospital placement rate. Top teaching hospitals (AKU, Shifa, Dow) often provide tuition waivers and clinical stipends.
+3. **Doctor of Physical Therapy (DPT - 5 Years):**
+   • Prestigious doctor-title clinical profession focusing on musculoskeletal and stroke rehabilitation with great private clinic potential.
+4. **Doctor of Pharmacy (Pharm-D - 5 Years):**
+   • Vital for pharmaceutical manufacturing, clinical hospital rounds, and DRAP regulatory affairs.
+5. **BS Biotechnology & Medical Lab Technology (MLT):**
+   • Research careers in genetic diagnostic laboratories (Shaukat Khanum, Chughtai, AKU) with immense foreign MS/PhD scholarship quotas.
+
+What are your current or expected FSc marks? Let's analyze your exact admission probability!`;
+    }
 
     // 1. UNIVERSITIES & HIGHER EDUCATION (NUST, FAST, COMSATS, UET, NED, ETC.)
     if (
@@ -2935,26 +4078,26 @@ While no career guarantees automatic success without hard work, this path gives 
 
     // 12. DYNAMIC CONVERSATIONAL RESPONSE FOR ANY OTHER INQUIRY (NEVER STATIC)
     return lang === "ur"
-      ? `سلام! آپ کے سوال **"${query}"** کے حوالے سے، میں آپ کا ذاتی کونسلر ہوں۔
+      ? `🤝 **آپ کے سوال کے حوالے سے ذاتی کونسلنگ مشورہ:**
 
-آپ کا تعلیمی پروفائل: **${stage}** (گروپ: **${stream}**)، مشاغل: **${hobbiesStr}**، رہائش: **${city}**${topDoc ? `، اور اپلوڈ کردہ سند: **${topDoc.detectedTitle}**` : ""}۔
+آپ نے پوچھا: "${query}"
 
-آپ کے لیے سب سے موزوں تصدیق شدہ فیلڈ **${top.name}** (${top.sector}) ہے۔ اس شعبے میں آگے بڑھنے کے لیے درج ذیل 3 ٹھوس اقدامات کیجیے:
-1. **عملی اسکلز کی مشق:** ${top.skills_to_master.slice(0, 2).join(" اور ")} پر خصوصی توجہ دیں۔
-2. **پورٹ فولیو کا آغاز:** اپنے بنائے ہوئے پروجیکٹس کو GitHub یا Behance پر محفوظ کریں۔
-3. **داخلے کے اوقات:** ${city} میں متعلقہ مرکز (${top.institute}) سے رجسٹریشن شیڈول معلوم کریں۔
+ایک ذاتی مینٹور اور بھائی کی حیثیت سے میرا مخلصانہ مشورہ یہ ہے:
+1. **فطری صلاحیت اور دلچسپی:** کسی شعبے کا انتخاب صرف وقتی ٹرینڈ یا رشتہ داروں کے کہنے پر نہ کریں، بلکہ یہ دیکھیں کہ آپ روزانہ اس کام کو بغیر بور ہوئے کر سکتے ہیں یا نہیں۔
+2. **عملی کام کی اہمیت:** آج کی مارکیٹ میں محض کاغذی ڈگری کافی نہیں ہوتی۔ اصلی اہمیت آپ کے عملی کام (Portfolio)، پروجیکٹس اور مہارت کی ہے۔
+3. **آئندہ لائحہ عمل:** آپ کے تعلیمی مرحلے (${stage}، گروپ ${stream}) کے مطابق، اپنے بنیادی تصورات مضبوط کریں اور ساتھ ساتھ ایک جدید ہنر سیکھیں۔
 
-آپ اس حوالے سے مزید کیا جاننا چاہتے ہیں؟ آپ بلا جھجھک مخصوص سوال پوچھ سکتے ہیں!`
-      : `Hello! Regarding your inquiry about **"${query}"**, I am analyzing this directly in the context of your background.
+آپ اس موضوع، یونیورسٹی کے داخلے، یا کسی متبادل شعبے کے بارے میں کیا جاننا چاہتے ہیں؟ کھل کر بتائیں!`
+      : `🤝 **Personal Mentor Guidance on Your Inquiry:**
 
-Your loaded profile: Stage **${stage}** (${stream} group), demonstrated interests in **${hobbiesStr}**, based in **${city}**${topDoc ? `, with verified credential **${topDoc.detectedTitle}** (${topDoc.confidenceScore}% confidence)` : ""}.
+You asked: "${query}"
 
-Your top matched pathway is **${top.name}** (${top.sector}). Here are 3 direct next steps tailored to your question:
-1. **Target Key Competencies:** Focus directly on mastering ${top.skills_to_master.slice(0, 2).join(" and ")}.
-2. **Document Your Progress:** Build tangible proof of work on GitHub or your portfolio link to validate your skills.
-3. **Application Verification:** Check upcoming intake deadlines with ${top.institute} in ${city}.
+As your personal educational and career counselor, here is my honest advice:
+1. **Aptitude & Genuine Interest First:** Never select a career solely on hype or family pressure. Pick a field where you feel natural curiosity to practice every day.
+2. **Demonstrated Competence:** In Pakistan's competitive economy, degree titles open doors, but practical projects, problem-solving, and portfolios secure real careers.
+3. **Your Next Concrete Step:** At your current stage (${stage}, stream ${stream}), maintain good conceptual marks while dedicating an hour daily to hands-on practical skills.
 
-What specific facet of this would you like to explore next? Feel free to ask any specific academic or career question!`;
+Would you like more details on university merit cut-offs, entry test strategies, or alternative career options? Feel free to ask!`;
   };
 
   const handleOptionChipClick = (opt: string) => {
@@ -3065,6 +4208,22 @@ What specific facet of this would you like to explore next? Feel free to ask any
               )}
             </button>
 
+            {/* Quick Voice Command Mic in Header */}
+            <button
+              onClick={toggleVoiceRecognition}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                isListening
+                  ? "bg-red-600 text-white border-red-400 animate-pulse shadow-md"
+                  : "border-white/30 bg-white/12 text-white hover:bg-white/20"
+              }`}
+              title="Voice Commands: Speak to navigate or ask questions (e.g. 'Show trends', 'Open questionnaire', 'What can I do after Pre-Med?')"
+            >
+              {isListening ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-yellow-300" />}
+              <span className="hidden sm:inline">
+                {isListening ? (lang === "ur" ? "سن رہا ہے..." : "Listening...") : (lang === "ur" ? "صوتی مائیک" : "Voice Mic")}
+              </span>
+            </button>
+
             {/* Language Switch */}
             <button
               onClick={toggleLanguage}
@@ -3149,6 +4308,21 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 style={{ backgroundColor: "var(--yellow)", color: "var(--green-dark)" }}
               >
                 {studentDocuments.length}
+              </span>
+            </button>
+
+            {/* Pakistan Career Demand Radar & Trends Tab */}
+            <button
+              onClick={() => setActiveTab("trends")}
+              className={`px-3.5 py-2 rounded-lg text-xs md:text-sm font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                activeTab === "trends"
+                  ? "bg-green-900 text-white shadow-xs"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <span>
+                {lang === "ur" ? "مارکیٹ ڈیمانڈ و رجحانات (2024-2028)" : "Career Demand Radar (2024–2028)"}
               </span>
             </button>
           </div>
@@ -4780,24 +5954,94 @@ What specific facet of this would you like to explore next? Feel free to ask any
 
               {/* Voice Listening Banner */}
               {isListening && (
-                <div className="bg-red-50 border-t border-red-200 px-4 py-2 flex items-center justify-between text-xs text-red-900 animate-pulse">
+                <div className="bg-red-50 border-t border-red-200 px-4 py-2.5 flex items-center justify-between text-xs text-red-900 animate-pulse">
                   <div className="flex items-center gap-2 font-bold">
                     <Mic className="w-4 h-4 text-red-600 animate-bounce" />
                     <span>
                       {lang === "ur"
-                        ? "🎙️ مائیکروفون سن رہا ہے: اپنا سوال اردو یا انگریزی میں بولیں..."
-                        : "🎙️ Listening... Speak your career question in English or Urdu now..."}
+                        ? "🎙️ مائیکروفون سن رہا ہے: اپنا مکمل سوال بولیں۔ جب چاہیں وقفہ لے سکتے ہیں۔ ختم کرنے پر 'بولنا مکمل' دبائیں..."
+                        : "🎙️ Listening continuously... Speak your question naturally. Click 'Done Speaking' when finished..."}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={toggleVoiceRecognition}
-                    className="px-2 py-0.5 rounded bg-red-600 text-white font-bold cursor-pointer"
+                    className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer transition-colors shadow-2xs"
                   >
-                    Done
+                    {lang === "ur" ? "⏹️ بولنا مکمل" : "⏹️ Done Speaking"}
                   </button>
                 </div>
               )}
+
+              {/* Voice Approval & Spelling Review Banner */}
+              {hasTranscribedVoice && inputText.trim() && (
+                <div className="bg-amber-50 border-t border-amber-200 px-4 py-2.5 flex items-center justify-between text-xs text-amber-950">
+                  <div className="flex items-center gap-2 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>
+                      {lang === "ur"
+                        ? "✏️ صوتی سوال تحریر میں آ چکا ہے۔ کسی بھی لفظ یا املا کی تصحیح کریں، پھر نیچے 'منظور کریں اور بھیجیں' دبائیں۔"
+                        : "✏️ Voice transcribed into text. Please check for any spelling mistakes, edit if needed, then click 'Approve & Send'."}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInputText("");
+                      setHasTranscribedVoice(false);
+                    }}
+                    className="text-[11px] font-bold text-gray-500 hover:text-red-600 cursor-pointer"
+                  >
+                    {lang === "ur" ? "مٹائیں" : "Clear"}
+                  </button>
+                </div>
+              )}
+
+              {/* Quick Voice & Guidance Ideas Chips */}
+              <div className="px-3 md:px-4 py-2 bg-gray-50 border-t border-gray-100 flex items-center gap-2 overflow-x-auto text-xs no-scrollbar">
+                <span className="text-gray-500 font-bold shrink-0 flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  {lang === "ur" ? "مشورہ مانگیں:" : "Ask Advisor:"}
+                </span>
+                {(
+                  qData.stream === "pre_medical"
+                    ? [
+                        lang === "ur" ? "🩺 ایم بی بی ایس بمقابلہ ڈی پی ٹی و نرسنگ" : "🩺 MBBS vs DPT vs BS Nursing",
+                        lang === "ur" ? "💡 اگر ایم ڈی کیٹ میرٹ نہ بنے تو کیا کریں؟" : "💡 What if MDCAT merit is missed?",
+                        lang === "ur" ? "🔬 بائیوٹیکنالوجی اور لیب سائنسز کا اسکوپ" : "🔬 BS Biotech & Lab Sciences Scope",
+                        lang === "ur" ? "🏛️ آغا خان اور کنگ ایڈورڈ کا میرٹ" : "🏛️ AKU & King Edward Merit Realities"
+                      ]
+                    : qData.stream === "ics" || qData.stream === "pre_engineering"
+                    ? [
+                        lang === "ur" ? "💻 فاسٹ بمقابلہ نسٹ سافٹ ویئر انجینئرنگ" : "💻 FAST vs NUST Software Engineering",
+                        lang === "ur" ? "🤖 بی ایس آرٹیفیشل انٹیلیجنس کے کیریئر مواقع" : "🤖 BS Artificial Intelligence Scope in Pakistan",
+                        lang === "ur" ? "📈 آئی ٹی کمپنیوں میں متوقع تنخواہیں" : "📈 Pakistan IT Industry Salary Trajectories",
+                        lang === "ur" ? "🌐 گٹ ہب پورٹ فولیو کیسے بنائیں؟" : "🌐 How to build an open-source GitHub portfolio"
+                      ]
+                    : qData.stage === "matric"
+                    ? [
+                        lang === "ur" ? "📝 میٹرک سائنس: بائیو یا کمپیوٹر میں کیا بہتر ہے؟" : "📝 Matric: Bio vs Computer Science?",
+                        lang === "ur" ? "🛠️ نیوٹیک کے 3 ماہ کے کورسز کا فائدہ" : "🛠️ NAVTTC 3-Month High-Tech courses",
+                        lang === "ur" ? "🎓 میٹرک کے بعد ایف ایس سی، آئی سی ایس یا ڈپلومہ؟" : "🎓 After Matric: FSc, ICS, or DAE?"
+                      ]
+                    : [
+                        lang === "ur" ? "✍️ بی اے انگلش کے بعد ہائی انکم کورسز" : "✍️ High-Income Courses after BA English",
+                        lang === "ur" ? "💻 کمپیوٹر سائنس بمقابلہ سافٹ ویئر انجینئرنگ" : "💻 Computer Science vs Software Engineering",
+                        lang === "ur" ? "🏛️ نسٹ اور فاسٹ کا موازنہ" : "🏛️ FAST vs NUST Comparison",
+                        lang === "ur" ? "📊 کیریئر ڈیمانڈ اور تنخواہ کا چارٹ دکھائیں" : "📊 Show Career Demand & Salary Chart",
+                        lang === "ur" ? "🌐 گھر بیٹھے فری لانسنگ کیسے شروع کریں؟" : "🌐 How to start freelancing from home?"
+                      ]
+                ).map((prompt, pIdx) => (
+                  <button
+                    key={pIdx}
+                    type="button"
+                    onClick={() => handleSendChatMessage(prompt)}
+                    className="px-2.5 py-1 rounded-full bg-white border border-gray-200 hover:border-emerald-500 text-gray-700 hover:text-emerald-950 font-medium whitespace-nowrap cursor-pointer transition-colors shadow-2xs shrink-0"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
 
               {/* Chat Input Bar */}
               <form
@@ -4843,9 +6087,17 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 <button
                   type="submit"
                   disabled={isTyping || !inputText.trim()}
-                  className="btn-yellow-action px-5 sm:px-6 py-3 rounded-lg text-sm md:text-base inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0"
+                  className="btn-yellow-action px-5 sm:px-6 py-3 rounded-lg text-sm md:text-base inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 font-bold"
                 >
-                  <span>{lang === "ur" ? "بھیجیں" : "Send"}</span>
+                  <span>
+                    {lang === "ur"
+                      ? hasTranscribedVoice
+                        ? "منظور کریں اور بھیجیں"
+                        : "بھیجیں"
+                      : hasTranscribedVoice
+                      ? "Approve & Send"
+                      : "Send"}
+                  </span>
                   <Send className="w-4 h-4" />
                 </button>
               </form>
@@ -4955,9 +6207,320 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 </div>
               </div>
 
-              {/* Background Glow */}
-              <div className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
             </div>
+
+            {/* 1b. DOCUMENT & CV PORTFOLIO READINESS MONITOR (UPLOADED VS MISSING AUDIT) */}
+            {(() => {
+              const cvDocs = studentDocuments.filter((d) => d.type === "cv");
+              const marksheetDocs = studentDocuments.filter((d) => d.type === "marksheet");
+              const certDocs = studentDocuments.filter((d) => d.type === "certificate");
+              const diplomaDocs = studentDocuments.filter((d) => d.type === "diploma");
+              const hasLinks = Boolean(
+                portfolioLinks.linkedinUrl?.trim() ||
+                portfolioLinks.githubUrl?.trim() ||
+                portfolioLinks.portfolioWebsiteUrl?.trim()
+              );
+
+              const pillars = [
+                {
+                  id: "cv",
+                  title: lang === "ur" ? "سی وی / ریزیومے" : "CV & Resume",
+                  category: "cv" as const,
+                  isUploaded: cvDocs.length > 0,
+                  count: cvDocs.length,
+                  doc: cvDocs[0],
+                  desc:
+                    cvDocs.length > 0
+                      ? cvDocs[0].detectedTitle
+                      : lang === "ur"
+                      ? "سی وی شامل نہیں — انٹرن شپس و جاب میچنگ کے لیے درکار"
+                      : "Resume missing — needed for AI career & internship matching",
+                  icon: FileText,
+                  uploadLabel: lang === "ur" ? "+ سی وی اپلوڈ کریں" : "+ Upload CV"
+                },
+                {
+                  id: "marksheet",
+                  title: lang === "ur" ? "تعلیمی مارک شیٹ / بورڈ رزلٹ" : "Academic Marksheet",
+                  category: "marksheet" as const,
+                  isUploaded: marksheetDocs.length > 0,
+                  count: marksheetDocs.length,
+                  doc: marksheetDocs[0],
+                  desc:
+                    marksheetDocs.length > 0
+                      ? marksheetDocs[0].detectedTitle
+                      : lang === "ur"
+                      ? "مارک شیٹ باقی — تعلیمی میرٹ و شرائط کی تصدیق کے لیے"
+                      : "Transcript missing — verifies HEC / BISE admission prerequisites",
+                  icon: GraduationCap,
+                  uploadLabel: lang === "ur" ? "+ مارک شیٹ اپلوڈ کریں" : "+ Upload Marksheet"
+                },
+                {
+                  id: "certificate",
+                  title: lang === "ur" ? "تکنیکی و فنی سرٹیفکیٹ" : "Skills & Tech Certificate",
+                  category: "certificate" as const,
+                  isUploaded: certDocs.length > 0,
+                  count: certDocs.length,
+                  doc: certDocs[0],
+                  desc:
+                    certDocs.length > 0
+                      ? certDocs[0].detectedTitle
+                      : lang === "ur"
+                      ? "سرٹیفکیٹ باقی — ہنر کی تصدیق اور اعلیٰ تنخواہ کے راستوں کے لیے"
+                      : "Certificate missing — NAVTTC / DigiSkills credential proves skill level",
+                  icon: Award,
+                  uploadLabel: lang === "ur" ? "+ سرٹیفکیٹ اپلوڈ کریں" : "+ Upload Certificate"
+                },
+                {
+                  id: "diploma",
+                  title: lang === "ur" ? "انٹرن شپ لیٹر / ڈپلومہ" : "Internship Letter / Diploma",
+                  category: "diploma" as const,
+                  isUploaded: diplomaDocs.length > 0,
+                  count: diplomaDocs.length,
+                  doc: diplomaDocs[0],
+                  desc:
+                    diplomaDocs.length > 0
+                      ? diplomaDocs[0].detectedTitle
+                      : lang === "ur"
+                      ? "انٹرن شپ / تجربہ لیٹر باقی — موجودہ عملی کام کو ظاہر کرتا ہے"
+                      : "Experience letter / diploma missing — proves practical workplace exposure",
+                  icon: Briefcase,
+                  uploadLabel: lang === "ur" ? "+ انٹرن شپ سند شامل کریں" : "+ Upload Diploma / Letter"
+                },
+                {
+                  id: "portfolio_links",
+                  title: lang === "ur" ? "آن لائن پورٹ فولیو لنکس" : "LinkedIn & GitHub Links",
+                  category: "portfolio" as const,
+                  isUploaded: hasLinks,
+                  count: hasLinks ? 1 : 0,
+                  doc: null,
+                  desc: hasLinks
+                    ? `${portfolioLinks.linkedinUrl ? "LinkedIn ✓" : ""} ${portfolioLinks.githubUrl ? "• GitHub ✓" : ""}`
+                    : lang === "ur"
+                    ? "لنکس شامل نہیں — لائیو کوڈ، آرٹیکلز اور پروفیشنل پروفائلز"
+                    : "Links missing — connects live writing articles, repos & LinkedIn",
+                  icon: Globe,
+                  uploadLabel: lang === "ur" ? "+ لنکس منسلک کریں" : "+ Connect Links"
+                }
+              ];
+
+              const uploadedCount = pillars.filter((p) => p.isUploaded).length;
+              const readinessScore = Math.round((uploadedCount / pillars.length) * 100);
+
+              const filteredPillars =
+                monitorFilter === "uploaded"
+                  ? pillars.filter((p) => p.isUploaded)
+                  : monitorFilter === "missing"
+                  ? pillars.filter((p) => !p.isUploaded)
+                  : pillars;
+
+              return (
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-sm space-y-6">
+                  {/* Monitor Header with Readiness Meter */}
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="p-2 rounded-xl bg-emerald-100 text-emerald-900">
+                          <ClipboardList className="w-5 h-5 text-emerald-800" />
+                        </span>
+                        <h2 className="text-xl md:text-2xl font-black text-gray-900">
+                          {lang === "ur"
+                            ? "دستاویزات اور پورٹ فولیو مانیٹر (Readiness Tracker)"
+                            : "Document & Portfolio Readiness Monitor"}
+                        </h2>
+                      </div>
+                      <p className="text-xs md:text-sm text-gray-600">
+                        {lang === "ur"
+                          ? "ایک نظر میں دیکھیں کہ کون سی دستاویزات اپلوڈ ہو چکی ہیں اور کون سی باقی ہیں تاکہ آپ کا پورٹ فولیو کونسلر کے لیے مکمل تیار ہو سکے:"
+                          : "Monitor at a glance which documents are already uploaded vs. missing so Careerly AI and employers see your full profile:"}
+                      </p>
+                    </div>
+
+                    {/* Overall Progress Indicator */}
+                    <div className="flex items-center gap-3.5 bg-gray-50 border border-gray-200 p-3 rounded-2xl">
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                          {lang === "ur" ? "پورٹ فولیو تیاری" : "Portfolio Readiness"}
+                        </div>
+                        <div className="text-xl font-black text-emerald-900">
+                          {readinessScore}% Complete
+                        </div>
+                        <div className="text-[11px] text-gray-500">
+                          {uploadedCount} of {pillars.length} Verified
+                        </div>
+                      </div>
+                      <div
+                        className="w-12 h-12 rounded-full border-4 flex items-center justify-center font-black text-xs transition-colors"
+                        style={{
+                          borderColor: readinessScore >= 80 ? "#16a34a" : readinessScore >= 60 ? "#d97706" : "#dc2626",
+                          backgroundColor: readinessScore >= 80 ? "#f0fdf4" : readinessScore >= 60 ? "#fffbeb" : "#fef2f2",
+                          color: readinessScore >= 80 ? "#14532d" : readinessScore >= 60 ? "#78350f" : "#7f1d1d"
+                        }}
+                      >
+                        {uploadedCount}/{pillars.length}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filter Pills for Monitoring */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setMonitorFilter("all")}
+                        className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                          monitorFilter === "all"
+                            ? "bg-emerald-900 text-white shadow-xs"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {lang === "ur" ? `تمام 5 شعبے (${pillars.length})` : `All 5 Pillars (${pillars.length})`}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMonitorFilter("uploaded")}
+                        className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                          monitorFilter === "uploaded"
+                            ? "bg-emerald-900 text-white shadow-xs"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{lang === "ur" ? `اپلوڈ شدہ (${uploadedCount})` : `Already Uploaded (${uploadedCount})`}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMonitorFilter("missing")}
+                        className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                          monitorFilter === "missing"
+                            ? "bg-emerald-900 text-white shadow-xs"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                        <span>
+                          {lang === "ur"
+                            ? `باقی / درکار (${pillars.length - uploadedCount})`
+                            : `Missing / Action Needed (${pillars.length - uploadedCount})`}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="text-[11px] text-gray-500 font-medium">
+                      {uploadedCount === pillars.length
+                        ? (lang === "ur" ? "✓ پورٹ فولیو 100% مکمل اور تصدیق شدہ ہے" : "✓ Portfolio is 100% verified & complete")
+                        : (lang === "ur" ? `⚠️ مزید ${pillars.length - uploadedCount} اسناد شامل کر کے مکمل فائدہ اٹھائیں` : `⚠️ Add remaining ${pillars.length - uploadedCount} item(s) for highest AI match accuracy`)}
+                    </div>
+                  </div>
+
+                  {/* 5-Pillar Cards Grid */}
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                    {filteredPillars.map((p) => {
+                      const Icon = p.icon;
+                      return (
+                        <div
+                          key={p.id}
+                          className={`p-4 rounded-2xl border-2 flex flex-col justify-between transition-all ${
+                            p.isUploaded
+                              ? "bg-emerald-50/40 border-emerald-300 hover:border-emerald-500 hover:shadow-sm"
+                              : "bg-amber-50/30 border-dashed border-amber-300 hover:border-amber-400"
+                          }`}
+                        >
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <div
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                  p.isUploaded
+                                    ? "bg-emerald-100 text-emerald-900"
+                                    : "bg-amber-100 text-amber-900"
+                                }`}
+                              >
+                                <Icon className="w-4 h-4" />
+                              </div>
+
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                                  p.isUploaded
+                                    ? "bg-emerald-200/80 text-emerald-950"
+                                    : "bg-amber-200/80 text-amber-950"
+                                }`}
+                              >
+                                {p.isUploaded ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-800 stroke-[3]" />
+                                    <span>{lang === "ur" ? "اپلوڈ شدہ" : "Uploaded"}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <AlertCircle className="w-3 h-3 text-amber-800" />
+                                    <span>{lang === "ur" ? "باقی ہے" : "Missing"}</span>
+                                  </>
+                                )}
+                              </span>
+                            </div>
+
+                            <div>
+                              <h4 className="font-extrabold text-sm text-gray-900 leading-snug">
+                                {p.title}
+                              </h4>
+                              <p className="text-[11px] text-gray-600 mt-1 line-clamp-2 leading-relaxed">
+                                {p.desc}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 mt-3 border-t border-gray-200/60 flex items-center justify-between gap-1 text-[11px]">
+                            {p.isUploaded ? (
+                              <>
+                                <span className="font-bold text-emerald-900 text-[10px] truncate">
+                                  {p.count} Attached ✓
+                                </span>
+                                {p.doc ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPreviewingDoc(p.doc);
+                                      setShowPreviewModal(true);
+                                    }}
+                                    className="font-bold text-emerald-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    <span>{lang === "ur" ? "دیکھیں" : "Preview"}</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsEditingLinks(true)}
+                                    className="font-bold text-emerald-800 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <span>{lang === "ur" ? "لنکس" : "Links"}</span>
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (p.id === "portfolio_links") {
+                                    setIsEditingLinks(true);
+                                  } else {
+                                    handleOpenAddDocModal(p.category);
+                                  }
+                                }}
+                                className="w-full py-1.5 px-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] text-center cursor-pointer transition-colors shadow-2xs"
+                              >
+                                {p.uploadLabel}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 2. UPLOAD & MANAGEMENT ACTION BAR */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
@@ -4986,7 +6549,7 @@ What specific facet of this would you like to explore next? Feel free to ask any
 
                 <button
                   type="button"
-                  onClick={handleOpenAddDocModal}
+                  onClick={() => handleOpenAddDocModal()}
                   className="px-3.5 py-2.5 rounded-xl border border-gray-300 hover:border-gray-400 bg-gray-50 text-gray-800 text-xs md:text-sm font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <FilePlus className="w-4 h-4 text-emerald-800" />
@@ -6111,6 +7674,28 @@ What specific facet of this would you like to explore next? Feel free to ask any
         )}
 
         {/* ============================================================ */}
+        {/* TAB 5: PAKISTAN CAREER DEMAND RADAR & SALARY TRENDS (2024-2028) */}
+        {/* ============================================================ */}
+        {activeTab === "trends" && (
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <CareerTrendsView
+              lang={lang}
+              onConsultCareer={(sectorTitle) => {
+                setActiveTab("counselor");
+                handleSendChatMessage(
+                  lang === "ur"
+                    ? `${sectorTitle} کے بارے میں پاکستان میں جاب مارکیٹ، درکار اسکلز اور داخلے کی مکمل تفصیلات بتائیں۔`
+                    : `Provide comprehensive career guidance for ${sectorTitle} in Pakistan: entry tests, top universities, skills roadmap, and job market realities.`
+                );
+              }}
+              speakText={speakText}
+              isSpeaking={isSpeaking}
+              speakingId={speakingId}
+            />
+          </div>
+        )}
+
+        {/* ============================================================ */}
         {/* MODAL: ADD / EDIT CREDENTIAL MANUALLY */}
         {/* ============================================================ */}
         {showAddDocModal && (
@@ -6459,21 +8044,48 @@ What specific facet of this would you like to explore next? Feel free to ask any
         {/* ============================================================ */}
         {showReportModal && report && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl relative">
+            <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl relative border border-gray-200">
+              {/* Header */}
               <div className="flex items-center justify-between border-b pb-4">
-                <div>
-                  <h3 className="text-xl font-black text-gray-900">
-                    {lang === "ur" ? "آپ کا جامع کونسلنگ جائزہ اور رپورٹ کارڈ" : "Comprehensive Evaluation & Roadmap"}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {formatStageLabel(qData.stage)} • {qData.city} {qData.uploadedDoc ? `• Verified Doc: ${qData.uploadedDoc.detectedTitle}` : ""}
-                  </p>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-emerald-100 text-emerald-900">
+                      <Award className="w-5 h-5 text-emerald-800" />
+                    </span>
+                    <h3 className="text-xl md:text-2xl font-black text-gray-900">
+                      {lang === "ur" ? "آپ کا جامع کونسلنگ جائزہ اور حتمی رپورٹ کارڈ" : "Comprehensive Evaluation & Career Report Card"}
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 font-medium">
+                    <span className="font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {formatStageLabel(qData.stage)}
+                    </span>
+                    <span>•</span>
+                    <span className="font-bold text-gray-800">
+                      {qData.currentEducation || formatStreamLabel(qData.stream) || "Enrolled Student"}
+                    </span>
+                    <span>•</span>
+                    <span>{qData.city || "Pakistan"}</span>
+                    <span>•</span>
+                    <span className="text-emerald-700 font-semibold">
+                      {qData.ongoingJobOrInternship || "Active Intern / Working"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="p-2 rounded-xl border border-gray-300 hover:bg-gray-100 text-gray-700 cursor-pointer transition-colors"
+                    title="Print or Export as PDF"
+                  >
+                    <Printer className="w-4 h-4" />
+                  </button>
+
+                  <button
                     onClick={() => saveCurrentSession()}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                     style={{ backgroundColor: "var(--yellow)", color: "var(--green-dark)" }}
                     title="Save this completed report card"
                   >
@@ -6483,60 +8095,177 @@ What specific facet of this would you like to explore next? Feel free to ask any
 
                   <button
                     onClick={() => setShowReportModal(false)}
-                    className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer font-bold text-sm"
+                    className="p-2 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer font-bold text-sm"
                   >
                     ✕
                   </button>
                 </div>
               </div>
 
-              {/* 1. WHICH AREAS TO CHOOSE (STRONG FIT) */}
-              <div className="space-y-4">
-                <h4 className="font-bold text-emerald-950 text-base flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-700" />
-                  <span>{lang === "ur" ? "🎯 کون سے شعبے منتخب کریں (Strong Fit)" : "🎯 WHICH AREAS TO CHOOSE (Strong Fit)"}</span>
-                </h4>
-                {report.strongFit.map((item, idx) => (
-                  <div key={idx} className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 text-xs space-y-2.5">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="font-extrabold text-sm text-gray-900">{item.name}</span>
-                      <span className="font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded">
-                        NVQF Level {item.nvqf_level || "3/4"} • {item.duration_months} Months
-                      </span>
-                    </div>
+              {/* 1. STUDENT PROFILE CONTEXT & EVIDENCE AUDIT */}
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 grid sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <span className="text-gray-400 font-bold block text-[10px] uppercase">Ongoing Education:</span>
+                  <span className="font-extrabold text-gray-900 text-sm">{qData.currentEducation || "BA English (Enrolled)"}</span>
+                  <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">No 4-year degree restart needed</span>
+                </div>
 
-                    <div className="text-gray-700"><strong>Institute:</strong> {item.institute} ({item.city})</div>
-                    <div className="text-gray-700"><strong>Financial Structure:</strong> {item.financial_model}</div>
+                <div>
+                  <span className="text-gray-400 font-bold block text-[10px] uppercase">Current Engagement:</span>
+                  <span className="font-extrabold text-gray-900 text-sm">{qData.ongoingJobOrInternship || "Active Content Intern"}</span>
+                  <span className="text-[11px] text-gray-500 block mt-0.5">Practical workplace track</span>
+                </div>
 
-                    {/* Skills to Master */}
-                    <div className="p-2.5 rounded-lg bg-white border border-emerald-200">
-                      <strong className="text-emerald-900 block mb-1">🛠️ Essential Skills to Master:</strong>
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {item.skills_to_master.map((s: string, sI: number) => (
-                          <span key={sI} className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-semibold text-[11px]">
-                            • {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                <div>
+                  <span className="text-gray-400 font-bold block text-[10px] uppercase">Verified Documents:</span>
+                  <span className="font-extrabold text-emerald-950 text-sm">
+                    {studentDocuments.length} Document(s) Attached
+                  </span>
+                  <span className="text-[11px] text-gray-500 block mt-0.5 truncate">
+                    {studentDocuments[0] ? studentDocuments[0].detectedTitle : "Local verified records"}
+                  </span>
+                </div>
 
-                    {/* Job Opportunities */}
-                    <div className="text-gray-800">
-                      <strong>💼 Realistic Job Opportunities:</strong> {item.job_opportunities.join(" • ")}
-                    </div>
-
-                    <div className="text-emerald-900 bg-emerald-100/60 p-2 rounded">
-                      <strong>Why It Fits Hobbies & Academics:</strong> {item.reasonsFit}
-                    </div>
-
-                    <div className="text-gray-600 bg-white p-2 rounded border border-gray-200">
-                      <strong>When to Choose:</strong> {item.when_to_choose}
-                    </div>
-                  </div>
-                ))}
+                <div>
+                  <span className="text-gray-400 font-bold block text-[10px] uppercase">Portfolio Links:</span>
+                  <span className="font-extrabold text-gray-900 text-sm">
+                    {portfolioLinks.linkedinUrl ? "LinkedIn Connected" : "Portfolio Connected"}
+                  </span>
+                  <span className="text-[11px] text-emerald-700 block mt-0.5 truncate">
+                    {portfolioLinks.githubUrl || portfolioLinks.linkedinUrl || "Live public proof"}
+                  </span>
+                </div>
               </div>
 
-              {/* 2. WHICH AREAS NOT TO CHOOSE RIGHT NOW */}
+              {/* 2. INTERESTS, HOBBIES & LEISURE TIME ACTIVITIES SECTION */}
+              <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-200 text-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-black text-sky-950 text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-sky-700" />
+                    <span>
+                      {lang === "ur"
+                        ? "مشاغل، فارغ اوقات کی سرگرمیاں اور آمدنی کے مواقع (Interests & Leisure Activities)"
+                        : "Personal Interests, Hobbies & Free-Time Activity Monetization"}
+                    </span>
+                  </h4>
+                  <span className="text-[10px] font-bold text-sky-800 bg-sky-100 px-2 py-0.5 rounded">
+                    Natural Aptitude Match
+                  </span>
+                </div>
+
+                <p className="text-gray-600 leading-relaxed text-[11px]">
+                  {lang === "ur"
+                    ? "آپ کے فارغ وقت کے مشاغل آپ کی فطری دلچسپی کو ظاہر کرتے ہیں۔ درج ذیل تجاویز آپ کے شوق کو باقاعدہ ہنر اور معقول آمدنی میں بدلتی ہیں:"
+                    : "Hobbies reflect your spontaneous problem-solving instincts. Here is how your leisure activities convert directly into monetizable Pakistani & global careers:"}
+                </p>
+
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
+                  {(qData.hobbies.length > 0 ? qData.hobbies : ["writing_debate", "reading_research", "social_media_ecommerce"]).map((hob, hIdx) => {
+                    const label = formatHobbyLabel(hob);
+                    let conversionTrack = "Digital Content Strategy & Copywriting";
+                    if (hob.includes("writing") || hob.includes("read")) {
+                      conversionTrack = "SEO Content Architecture, Copywriting & Technical Blogs (Rs. 80k–250k+)";
+                    } else if (hob.includes("game") || hob.includes("tech") || hob.includes("comput")) {
+                      conversionTrack = "QA Product Testing, UI/UX Microcopy & Community Moderation";
+                    } else if (hob.includes("art") || hob.includes("draw") || hob.includes("design")) {
+                      conversionTrack = "Figma Visual Interface & Landing Page Conversion Design";
+                    } else if (hob.includes("social") || hob.includes("video")) {
+                      conversionTrack = "Short-form Scriptwriting, Reels Strategy & Brand PR";
+                    } else if (hob.includes("puzzle") || hob.includes("logic")) {
+                      conversionTrack = "Data Research, Keyword Intelligence & Analytics Consulting";
+                    }
+                    return (
+                      <div key={hIdx} className="p-2.5 rounded-xl bg-white border border-sky-200 space-y-1">
+                        <span className="font-black text-sky-900 block text-xs">
+                          • {label}
+                        </span>
+                        <div className="text-[11px] text-gray-600 leading-snug">
+                          <strong>High-Income Translation:</strong> {conversionTrack}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. VALID UPSKILLING COURSES & PATHWAYS TO EARN MORE */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-black text-emerald-950 text-base flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                    <span>
+                      {lang === "ur"
+                        ? "🎯 موجودہ تعلیم کے ساتھ تصدیق شدہ اسکل کورسز (Upskilling Pathways to Earn More)"
+                        : "🎯 VALID COURSES TO ENHANCE SKILLS & EARN MORE (No Degree Restart)"}
+                    </span>
+                  </h4>
+                  <span className="text-[11px] text-emerald-800 bg-emerald-100 font-bold px-2.5 py-0.5 rounded">
+                    Grounded in Documents & Career Chat
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {SAMPLE_PROGRAMS.filter(p =>
+                    p.id === 25 || p.id === 26 || p.id === 27 || (report.topChoice && p.id === report.topChoice.id)
+                  ).slice(0, 3).map((item, idx) => (
+                    <div key={idx} className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 text-xs space-y-2.5">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="font-extrabold text-sm text-gray-900">{item.name}</span>
+                        <span className="font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded">
+                          NVQF Level {item.nvqf_level || "4"} • {item.duration_months} Months
+                        </span>
+                      </div>
+
+                      <div className="text-gray-700"><strong>Institute & Accreditation:</strong> {item.institute} ({item.city})</div>
+                      <div className="text-gray-700"><strong>Cost Structure:</strong> {item.financial_model}</div>
+
+                      {/* Skills to Master */}
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200">
+                        <strong className="text-emerald-900 block mb-1">🛠️ Core High-Income Competencies:</strong>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {item.skills_to_master.map((s: string, sI: number) => (
+                            <span key={sI} className="px-2 py-0.5 rounded bg-gray-100 text-gray-800 font-semibold text-[11px]">
+                              • {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="text-gray-800">
+                        <strong>💼 Realistic Remote / Domestic Opportunities:</strong> {item.job_opportunities.join(" • ")}
+                      </div>
+
+                      <div className="text-emerald-900 bg-emerald-100/60 p-2 rounded">
+                        <strong>Why It Enhances Your Ongoing BA & Internships:</strong> {item.when_to_choose}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. PERSONAL COUNSELOR CHAT SYNTHESIS */}
+              {messages.length > 1 && (
+                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 text-xs space-y-2">
+                  <h5 className="font-bold text-amber-950 flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4 text-amber-800" />
+                    <span>
+                      {lang === "ur"
+                        ? "کونسلر سیشن کا خلاصہ و کلیدی ہدایات (Personal Counselor Dialogue Synthesis)"
+                        : "Personal Counselor Chat Synthesis & Strategic Takeaways"}
+                    </span>
+                  </h5>
+                  <p className="text-gray-700 leading-relaxed text-[11px]">
+                    {lang === "ur"
+                      ? "آپ کے اور کونسلر کے درمیان طے پانے والی اہم گفتگو کے مطابق: نئی 4 سالہ ڈگری لینے کے بجائے موجودہ بی اے انگلش کے ساتھ SEO کاپی رائٹنگ، ٹیکنیکل کنٹینٹ اور یو آئی/یو ایکس مائیکرو کاپی کے 3 ماہ کے سرٹیفکیٹس حاصل کریں اور اپ ورک پر لائیو پورٹ فولیو منسلک کریں۔"
+                      : "Based on your direct mentor dialogue: Rather than repeating or restarting a 4-year degree, leverage your ongoing BA English & internship by building 3 high-converting live copywriting articles and UX microcopy cases on Upwork and LinkedIn."}
+                  </p>
+                  <div className="text-[11px] text-amber-900 font-semibold pt-1">
+                    Total Counselor Interactions Recorded: {messages.length} messages
+                  </div>
+                </div>
+              )}
+
+              {/* 5. WHICH AREAS NOT TO CHOOSE RIGHT NOW */}
               <div className="space-y-3">
                 <h4 className="font-bold text-red-950 text-base flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-red-700" />
@@ -6553,7 +8282,7 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 </div>
               </div>
 
-              {/* 3. 3-PHASE ROADMAP */}
+              {/* 6. 3-PHASE ROADMAP */}
               <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 text-xs space-y-2">
                 <h5 className="font-bold text-gray-900 flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-emerald-800" />
@@ -6561,21 +8290,21 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 </h5>
                 <div className="grid md:grid-cols-3 gap-2 pt-1">
                   <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                    <strong className="text-emerald-800 block mb-1">Phase 1</strong>
+                    <strong className="text-emerald-800 block mb-1">Phase 1: Foundation</strong>
                     <span className="text-gray-600">{report.roadmap.phase1}</span>
                   </div>
                   <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                    <strong className="text-emerald-800 block mb-1">Phase 2</strong>
+                    <strong className="text-emerald-800 block mb-1">Phase 2: Portfolio & Proof</strong>
                     <span className="text-gray-600">{report.roadmap.phase2}</span>
                   </div>
                   <div className="p-2.5 rounded-lg bg-white border border-gray-200">
-                    <strong className="text-emerald-800 block mb-1">Phase 3</strong>
+                    <strong className="text-emerald-800 block mb-1">Phase 3: High-Income Monetization</strong>
                     <span className="text-gray-600">{report.roadmap.phase3}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 4. BALANCED PARENT SUMMARY */}
+              {/* 7. BALANCED PARENT SUMMARY */}
               <div className="p-4 rounded-xl bg-green-950 text-white text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <h5 className="font-bold text-yellow-400 flex items-center gap-1.5">
@@ -6594,19 +8323,30 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 </p>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <button
-                  onClick={() => saveCurrentSession()}
-                  className="px-4 py-2 rounded-lg text-xs font-bold border flex items-center gap-1.5 cursor-pointer"
-                  style={{ backgroundColor: "var(--yellow)", color: "var(--green-dark)" }}
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{lang === "ur" ? "پورے سیشن کو محفوظ کریں" : "Save Session Snapshot"}</span>
-                </button>
+              {/* Actions Footer */}
+              <div className="flex items-center justify-between pt-2 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => saveCurrentSession()}
+                    className="px-4 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    style={{ backgroundColor: "var(--yellow)", color: "var(--green-dark)" }}
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{lang === "ur" ? "پورے سیشن کو محفوظ کریں" : "Save Session Snapshot"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => window.print()}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>{lang === "ur" ? "پرنٹ / پی ڈی ایف" : "Print Report"}</span>
+                  </button>
+                </div>
 
                 <button
                   onClick={() => setShowReportModal(false)}
-                  className="btn-yellow-action px-6 py-2 rounded-lg text-xs font-bold cursor-pointer"
+                  className="btn-yellow-action px-6 py-2 rounded-xl text-xs font-bold cursor-pointer"
                 >
                   {lang === "ur" ? "چیٹ کونسلر پر واپس جائیں" : "Back to Personal Counselor"}
                 </button>
@@ -6826,11 +8566,58 @@ What specific facet of this would you like to explore next? Feel free to ask any
                 : `I would like your in-depth counseling advice regarding my uploaded credential "${doc.detectedTitle}" (${doc.gradeOrMarks || "Grade A"}). What opportunities and programs does this unlock for me?`
             );
           }}
+          onUpdateAnnotations={(docId, newAnnotations) => {
+            setStudentDocuments((prev) =>
+              prev.map((d) => (d.id === docId ? { ...d, annotations: newAnnotations } : d))
+            );
+            if (previewingDoc && previewingDoc.id === docId) {
+              setPreviewingDoc({ ...previewingDoc, annotations: newAnnotations });
+            }
+            triggerToast(lang === "ur" ? "اینوٹیشنز محفوظ ہو گئی ہیں!" : "Document annotations saved!");
+          }}
           speakText={speakText}
           isSpeaking={isSpeaking}
           speakingId={speakingId}
           lang={lang}
         />
+
+        {/* FLOATING LIVE VOICE LISTENING & COMMAND DISPATCHER BAR */}
+        {isListening && (
+          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-950/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl shadow-2xl border-2 border-red-500/80 flex flex-col sm:flex-row items-center gap-3 animate-slide-up max-w-xl w-[92%]">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-9 h-9 rounded-full bg-red-600 flex items-center justify-center animate-pulse shrink-0">
+                <Mic className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-black uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                  <span>{lang === "ur" ? "مائیکروفون سن رہا ہے..." : "Listening for Voice Command or Question..."}</span>
+                </div>
+                <div className="text-xs font-bold text-gray-100 truncate">
+                  {inputText || (lang === "ur" ? "بولیں: 'رجحانات دکھائیں'، 'کونسلر'، یا اپنا سوال پوچھیں..." : "Say: 'Show trends', 'Open questionnaire', or ask any career question...")}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto ml-auto shrink-0">
+              <button
+                type="button"
+                onClick={toggleVoiceRecognition}
+                className="px-3 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold cursor-pointer transition-colors"
+              >
+                {lang === "ur" ? "بند کریں" : "Done"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Voice Command Feedback Toast Bar */}
+        {voiceCommandFeedback && (
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-950/95 text-yellow-300 border border-yellow-400/40 px-4 py-2 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 animate-fade-in backdrop-blur-md">
+            <Sparkles className="w-4 h-4 text-yellow-300" />
+            <span>{voiceCommandFeedback}</span>
+          </div>
+        )}
 
         {/* GLOBAL PERSISTENT VOICE CONTROLLER BAR ACROSS ALL PAGES */}
         {isSpeaking && (

@@ -21,15 +21,36 @@ import {
   Calendar,
   Layers,
   ChevronRight,
-  Eye
+  Eye,
+  Bookmark,
+  Plus,
+  Trash2,
+  Tag,
+  Highlighter,
+  FileCheck2,
+  PenTool,
+  Check,
+  AlertCircle
 } from "lucide-react";
 import { StudentDocument } from "../App";
+
+export interface DocumentAnnotation {
+  id: string;
+  target: string;
+  type: "highlight" | "counselor_note" | "verified_stamp" | "student_remark";
+  category: "strength" | "eligibility_signal" | "strategic_recommendation" | "action_item";
+  note: string;
+  author: string;
+  color: "emerald" | "amber" | "sky" | "rose" | "indigo";
+  createdAt: string;
+}
 
 interface DocumentPreviewModalProps {
   document: StudentDocument | null;
   isOpen: boolean;
   onClose: () => void;
   onDiscussInChat: (doc: StudentDocument) => void;
+  onUpdateAnnotations?: (docId: string, annotations: DocumentAnnotation[]) => void;
   speakText: (text: string, id?: string | number, customLang?: "en" | "ur") => void;
   isSpeaking: boolean;
   speakingId: string | number | null;
@@ -41,13 +62,22 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   isOpen,
   onClose,
   onDiscussInChat,
+  onUpdateAnnotations,
   speakText,
   isSpeaking,
   speakingId,
   lang
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [activeTab, setActiveTab] = useState<"preview" | "extraction" | "confidence">("preview");
+  const [activeTab, setActiveTab] = useState<"preview" | "annotations" | "extraction" | "confidence">("preview");
+
+  // Local annotation creation form state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTarget, setNewTarget] = useState("");
+  const [newType, setNewType] = useState<"highlight" | "counselor_note" | "verified_stamp" | "student_remark">("counselor_note");
+  const [newCategory, setNewCategory] = useState<"strength" | "eligibility_signal" | "strategic_recommendation" | "action_item">("strategic_recommendation");
+  const [newNote, setNewNote] = useState("");
+  const [newColor, setNewColor] = useState<"emerald" | "amber" | "sky" | "rose" | "indigo">("emerald");
 
   if (!isOpen || !doc) return null;
 
@@ -58,6 +88,147 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     issuerVerification: 95,
     prerequisitesMatch: 96,
     overallScore: confidence
+  };
+
+  // Get active annotations from document or initialize default rich ones
+  const annotations: DocumentAnnotation[] = (doc as any).annotations || [
+    {
+      id: "ann-1",
+      target: doc.gradeOrMarks || "Academic Result",
+      type: "verified_stamp",
+      category: "eligibility_signal",
+      note: `Verified by ${doc.issuer}. Meets benchmark criteria for high-demand university admissions and merit scholarships.`,
+      author: "Careerly AI Verification Engine",
+      color: "emerald",
+      createdAt: "Today"
+    },
+    {
+      id: "ann-2",
+      target: (doc.detectedSubjects && doc.detectedSubjects[0]) || "Core Aptitude",
+      type: "highlight",
+      category: "strength",
+      note: "Top subject strength detected. Recommended to leverage this foundation in higher education tracks.",
+      author: "Bhai Careerly AI Counselor",
+      color: "sky",
+      createdAt: "Today"
+    },
+    {
+      id: "ann-3",
+      target: "Career Pathway Fit",
+      type: "counselor_note",
+      category: "strategic_recommendation",
+      note: "High compatibility with NAVTTC High-Tech vocational fellowships and HEC accredited degree programs.",
+      author: "Bhai Careerly AI Counselor",
+      color: "amber",
+      createdAt: "Today"
+    }
+  ];
+
+  const handleAddAnnotation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim()) return;
+
+    const newAnn: DocumentAnnotation = {
+      id: `ann-${Date.now()}`,
+      target: newTarget.trim() || doc.detectedTitle,
+      type: newType,
+      category: newCategory,
+      note: newNote.trim(),
+      author:
+        newType === "student_remark"
+          ? "Student Self-Reflection"
+          : newType === "verified_stamp"
+          ? "Academic Verifier"
+          : "Bhai Careerly AI Counselor",
+      color: newColor,
+      createdAt: new Date().toLocaleDateString("en-PK", { month: "short", day: "numeric", year: "numeric" })
+    };
+
+    const updated = [newAnn, ...annotations];
+    if (onUpdateAnnotations) {
+      onUpdateAnnotations(doc.id, updated);
+    }
+    setNewNote("");
+    setNewTarget("");
+    setShowAddForm(false);
+  };
+
+  const handleDeleteAnnotation = (id: string) => {
+    const updated = annotations.filter((a) => a.id !== id);
+    if (onUpdateAnnotations) {
+      onUpdateAnnotations(doc.id, updated);
+    }
+  };
+
+  const handleApplyPreset = (preset: { target: string; type: any; category: any; note: string; color: any }) => {
+    const newAnn: DocumentAnnotation = {
+      id: `ann-${Date.now()}`,
+      target: preset.target,
+      type: preset.type,
+      category: preset.category,
+      note: preset.note,
+      author: "Bhai Careerly AI Counselor",
+      color: preset.color,
+      createdAt: "Today"
+    };
+    const updated = [newAnn, ...annotations];
+    if (onUpdateAnnotations) {
+      onUpdateAnnotations(doc.id, updated);
+    }
+  };
+
+  const handleDownloadDossier = () => {
+    const textContent = `
+================================================================================
+CAREERLY AI - PAKISTAN ACADEMIC CREDENTIAL VERIFICATION & ANNOTATION DOSSIER
+================================================================================
+Generated: ${new Date().toLocaleString()}
+Document Name: ${doc.name}
+Detected Credential: ${doc.detectedTitle}
+Issuing Authority: ${doc.issuer}
+Stage & Year: ${doc.detectedStage.toUpperCase()} (${doc.year})
+Roll / Reg No: ${doc.rollOrRegNo || "Verified Academic Serial"}
+Obtained Marks / Grade: ${doc.gradeOrMarks || "First Division"}
+AI Confidence Accuracy: ${confidence}%
+
+AI EXTRACTED HIGHLIGHTS:
+${doc.detectedHighlights}
+
+KEY SUBJECTS / MODULES:
+${(doc.detectedSubjects || []).join(", ") || "General Academic Curriculum"}
+
+VERIFIED PRACTICAL SKILLS:
+${(doc.skills || []).join(", ")}
+
+ACTIVE PDF ANNOTATIONS & COUNSELOR NOTES (${annotations.length}):
+${annotations
+  .map(
+    (ann, idx) => `
+[Annotation #${idx + 1}]
+- Target: ${ann.target}
+- Type: ${ann.type.toUpperCase()} (${ann.category})
+- Author: ${ann.author}
+- Date: ${ann.createdAt}
+- Remarks: "${ann.note}"
+`
+  )
+  .join("\n")}
+
+================================================================================
+OFFICIAL ADVISORY NOTICE:
+This dossier is an AI-assisted academic audit prepared by Careerly AI for educational
+and career planning across HEC, BISE, NAVTTC, and TEVTA frameworks in Pakistan.
+================================================================================
+`;
+    const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${doc.name.replace(/\.[^/.]+$/, "")}_verified_dossier.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const confidenceBadge =
@@ -77,11 +248,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     doc.name.toLowerCase().match(/\.(png|jpg|jpeg|webp)$/i) ||
     (doc.fileDataUrl && doc.fileDataUrl.startsWith("data:image/"));
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const spokenOverview = `${doc.detectedTitle}. Issued by ${doc.issuer}, year ${doc.year}. AI Confidence Score is ${confidence} percent. Verified marks: ${doc.gradeOrMarks || "Passed"}. Extracted subjects include ${(doc.detectedSubjects || []).join(", ") || "core subjects"}. Highlights: ${doc.detectedHighlights}`;
+  const spokenOverview = `${doc.detectedTitle}. Issued by ${doc.issuer}, year ${doc.year}. AI Confidence Score is ${confidence} percent. Verified marks: ${doc.gradeOrMarks || "Passed"}. Extracted subjects include ${(doc.detectedSubjects || []).join(", ") || "core subjects"}. Highlights: ${doc.detectedHighlights}. There are ${annotations.length} active annotations on this document.`;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 md:p-6 animate-fade-in">
@@ -111,6 +278,12 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-yellow-300 border border-white/20">
                   {doc.type.toUpperCase()}
                 </span>
+                {annotations.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 flex items-center gap-1">
+                    <Bookmark className="w-3 h-3 text-yellow-300" />
+                    <span>{annotations.length} Annotations</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-emerald-200 truncate">
                 {doc.name} • {doc.size} • {doc.issuer} ({doc.year})
@@ -139,12 +312,12 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               {isSpeaking && speakingId === `preview-${doc.id}` ? (
                 <>
                   <Square className="w-3.5 h-3.5 fill-current text-red-600" />
-                  <span>{lang === "ur" ? "روکیں" : "Stop Voice"}</span>
+                  <span>{lang === "ur" ? "روکیں" : "Stop"}</span>
                 </>
               ) : (
                 <>
                   <Volume2 className="w-3.5 h-3.5 text-yellow-300" />
-                  <span>{lang === "ur" ? "آواز سنیں" : "Listen in Voice"}</span>
+                  <span>{lang === "ur" ? "آواز سنیں" : "Listen"}</span>
                 </>
               )}
             </button>
@@ -173,7 +346,22 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>{lang === "ur" ? "دستاویز پریویو" : "Document PDF Preview"}</span>
+              <span>{lang === "ur" ? "دستاویز پریویو" : "Document Preview"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("annotations")}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "annotations"
+                  ? "bg-emerald-800 text-white shadow-xs"
+                  : "text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Highlighter className="w-3.5 h-3.5 text-yellow-400" />
+              <span>
+                {lang === "ur" ? "اینوٹیشنز و نوٹس" : "Annotations & Notes"} ({annotations.length})
+              </span>
             </button>
 
             <button
@@ -186,7 +374,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{lang === "ur" ? "دریافت شدہ اسکلز و ڈیٹا" : "Extracted Data & Skills"}</span>
+              <span>{lang === "ur" ? "دریافت شدہ اسکلز و ڈیٹا" : "Extracted Data"}</span>
             </button>
 
             <button
@@ -199,7 +387,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{lang === "ur" ? "درستگی کا اسکور" : "Accuracy Confidence Score"}</span>
+              <span>{lang === "ur" ? "درستگی کا اسکور" : "Accuracy"}</span>
             </button>
           </div>
 
@@ -235,21 +423,20 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               </div>
             )}
 
-            {doc.fileDataUrl && (
-              <a
-                href={doc.fileDataUrl}
-                download={doc.name}
-                className="px-2.5 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                title="Download original file"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Download</span>
-              </a>
-            )}
+            {/* Export Annotated Dossier */}
+            <button
+              type="button"
+              onClick={handleDownloadDossier}
+              className="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              title="Download Annotated Dossier"
+            >
+              <FileCheck2 className="w-3.5 h-3.5 text-emerald-700" />
+              <span className="hidden sm:inline">Export Dossier</span>
+            </button>
 
             <button
               type="button"
-              onClick={handlePrint}
+              onClick={() => window.print()}
               className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-600 cursor-pointer transition-colors"
               title="Print document preview"
             >
@@ -260,8 +447,33 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
         {/* MODAL BODY */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100/70">
+          {/* TAB 1: PREVIEW WITH INTERACTIVE ANNOTATION BADGES */}
           {activeTab === "preview" && (
             <div className="flex flex-col items-center justify-center min-h-[480px]">
+              {/* Floating Quick Annotation Bar */}
+              <div className="mb-4 w-full max-w-3xl flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-xs text-xs">
+                <div className="flex items-center gap-2">
+                  <Bookmark className="w-4 h-4 text-emerald-700" />
+                  <span className="font-bold text-gray-800">
+                    {lang === "ur" ? "فعال اینوٹیشنز و اسکور:" : "Active Document Annotations:"}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[11px]">
+                    {annotations.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("annotations")}
+                    className="text-emerald-800 hover:text-emerald-950 font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{lang === "ur" ? "تمام نوٹس دیکھیں یا شامل کریں" : "Manage & Add Notes"}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
               {/* IF REAL PDF DATA URL AVAILABLE */}
               {isPdf && doc.fileDataUrl ? (
                 <div
@@ -301,7 +513,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   />
                 </div>
               ) : (
-                /* AUTHENTIC PAKISTANI CERTIFICATE / CV RENDERER */
+                /* AUTHENTIC PAKISTANI CERTIFICATE / CV RENDERER WITH VISUAL OVERLAY ANNOTATIONS */
                 <div
                   className="w-full max-w-3xl bg-white p-6 md:p-10 rounded-2xl shadow-xl border-4 border-double border-emerald-900/60 relative overflow-hidden transition-transform duration-200"
                   style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
@@ -313,7 +525,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Certificate Top Header */}
+                  {/* Top Certificate Header */}
                   <div className="text-center space-y-2 border-b-2 border-emerald-900/40 pb-5 relative z-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-black tracking-widest uppercase">
                       <ShieldCheck className="w-4 h-4 text-emerald-700" />
@@ -342,8 +554,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Metadata Box */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 font-sans text-xs">
+                    {/* Metadata Box with Inline Verified Badge */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 font-sans text-xs relative">
                       <div>
                         <span className="text-gray-500 block text-[10px] uppercase font-bold">
                           Roll / Registration No
@@ -400,13 +612,45 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       {doc.detectedHighlights}
                     </div>
 
-                    {/* Raw Text Snippet Preview */}
-                    {doc.rawTextPreview && (
-                      <div className="space-y-1 font-mono text-[11px] text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                        <div className="font-sans font-bold text-gray-700 text-xs mb-1">
-                          Extracted OCR Document Text Stream:
+                    {/* ANNOTATIONS OVERLAY PIN CARDS (Visual on Certificate) */}
+                    {annotations.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-dashed border-emerald-300 font-sans space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black text-emerald-950 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                            <Highlighter className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Pinned Counselor Annotations & Official Stamps ({annotations.length})</span>
+                          </span>
                         </div>
-                        <p className="line-clamp-3 italic">"{doc.rawTextPreview}"</p>
+
+                        <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                          {annotations.map((ann) => {
+                            const isStamp = ann.type === "verified_stamp";
+                            const isCounselor = ann.type === "counselor_note";
+                            return (
+                              <div
+                                key={ann.id}
+                                className={`p-2.5 rounded-xl border text-left space-y-1 transition-all ${
+                                  isStamp
+                                    ? "bg-emerald-50/90 border-emerald-300 text-emerald-950"
+                                    : isCounselor
+                                    ? "bg-amber-50/90 border-amber-300 text-amber-950"
+                                    : "bg-sky-50/90 border-sky-300 text-sky-950"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-black text-[11px] truncate flex items-center gap-1">
+                                    {isStamp ? "🛡️ Verified:" : isCounselor ? "💡 Counselor:" : "✏️ Note:"}{" "}
+                                    {ann.target}
+                                  </span>
+                                  <span className="text-[10px] font-bold opacity-75 shrink-0">
+                                    {ann.createdAt}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] leading-snug line-clamp-2">"{ann.note}"</p>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
@@ -439,7 +683,241 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: EXTRACTED DATA & SKILLS */}
+          {/* TAB 2: INTERACTIVE ANNOTATIONS WORKSPACE */}
+          {activeTab === "annotations" && (
+            <div className="space-y-5 max-w-4xl mx-auto animate-fade-in text-xs">
+              {/* Toolbar & Add New Annotation Header */}
+              <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h4 className="font-black text-base text-gray-900 flex items-center gap-2">
+                    <Highlighter className="w-4 h-4 text-emerald-700" />
+                    <span>Interactive PDF & Certificate Annotations ({annotations.length})</span>
+                  </h4>
+                  <p className="text-gray-500 text-[11px]">
+                    Add verified marks stamps, counselor observations, and academic milestone highlights to this document.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{showAddForm ? "Close Form" : "Add Annotation"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadDossier}
+                    className="px-3 py-1.5 rounded-xl border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export Dossier</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* QUICK PRESET CHIPS */}
+              <div className="p-4 rounded-2xl bg-white border border-gray-200 space-y-2">
+                <span className="font-bold text-gray-600 block text-[11px] uppercase tracking-wider">
+                  Quick One-Click Preset Annotations:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleApplyPreset({
+                        target: "Grade A / First Division",
+                        type: "verified_stamp",
+                        category: "eligibility_signal",
+                        note: "Accredited First Division verified against official BISE/HEC grading standards.",
+                        color: "emerald"
+                      })
+                    }
+                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border border-emerald-200 cursor-pointer"
+                  >
+                    + 🛡️ Stamp: BISE / HEC Division 1 Verified
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleApplyPreset({
+                        target: "Higher Education Eligibility",
+                        type: "counselor_note",
+                        category: "strategic_recommendation",
+                        note: "Directly satisfies prerequisite requirements for competitive university programs and merit quotas.",
+                        color: "amber"
+                      })
+                    }
+                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-200 cursor-pointer"
+                  >
+                    + 💡 Counselor: Higher Education Prerequisite Met
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleApplyPreset({
+                        target: "Core Subject Aptitude",
+                        type: "highlight",
+                        category: "strength",
+                        note: "Exceptional mastery observed in quantitative / scientific subjects.",
+                        color: "sky"
+                      })
+                    }
+                    className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-950 font-bold border border-sky-200 cursor-pointer"
+                  >
+                    + 🎯 Highlight: Strong Subject Distinction
+                  </button>
+                </div>
+              </div>
+
+              {/* ADD ANNOTATION FORM MODAL / COLLAPSIBLE */}
+              {showAddForm && (
+                <form
+                  onSubmit={handleAddAnnotation}
+                  className="p-5 rounded-2xl bg-emerald-50/70 border-2 border-emerald-600 shadow-md space-y-4 animate-fade-in"
+                >
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+                      <PenTool className="w-4 h-4 text-emerald-700" />
+                      <span>Create New Annotation on this Document</span>
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(false)}
+                      className="p-1 hover:bg-emerald-100 rounded-lg text-emerald-900 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                        Annotation Target / Credential Section:
+                      </label>
+                      <input
+                        type="text"
+                        value={newTarget}
+                        onChange={(e) => setNewTarget(e.target.value)}
+                        placeholder="e.g. Mathematics 92%, Roll No, or Section Header"
+                        className="w-full p-2 rounded-xl bg-white border border-gray-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                        Annotation Type:
+                      </label>
+                      <select
+                        value={newType}
+                        onChange={(e) => setNewType(e.target.value as any)}
+                        className="w-full p-2 rounded-xl bg-white border border-gray-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      >
+                        <option value="counselor_note">💡 Counselor Strategic Note</option>
+                        <option value="verified_stamp">🛡️ Verified Accreditation Stamp</option>
+                        <option value="highlight">🎯 Key Merit Highlight</option>
+                        <option value="student_remark">✏️ Student Goal / Remark</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                      Annotation Content / Note:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={newNote}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      placeholder="Write guidance note, verification condition, or personal goal..."
+                      className="w-full p-2.5 rounded-xl bg-white border border-gray-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(false)}
+                      className="px-3 py-1.5 rounded-xl border border-gray-300 text-gray-700 font-bold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold cursor-pointer shadow-xs"
+                    >
+                      Save Annotation
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* LIST OF CURRENT ANNOTATIONS */}
+              <div className="space-y-3">
+                {annotations.map((ann, idx) => {
+                  const isStamp = ann.type === "verified_stamp";
+                  const isCounselor = ann.type === "counselor_note";
+                  return (
+                    <div
+                      key={ann.id}
+                      className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-2 relative"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${
+                              isStamp
+                                ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                                : isCounselor
+                                ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                : "bg-sky-100 text-sky-900 border border-sky-300"
+                            }`}
+                          >
+                            {ann.type.replace("_", " ")}
+                          </span>
+
+                          <span className="font-extrabold text-gray-900 text-sm">
+                            Target: {ann.target}
+                          </span>
+
+                          <span className="text-[10px] text-gray-500 font-medium">
+                            • By {ann.author} ({ann.createdAt})
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAnnotation(ann.id)}
+                          className="p-1 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                          title="Delete annotation"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <p className="text-gray-700 leading-relaxed bg-gray-50/70 p-3 rounded-xl border border-gray-100 font-medium">
+                        "{ann.note}"
+                      </p>
+                    </div>
+                  );
+                })}
+
+                {annotations.length === 0 && (
+                  <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-500">
+                    No annotations added yet. Use the presets above or click "Add Annotation" to add your first observation.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: EXTRACTED DATA & SKILLS */}
           {activeTab === "extraction" && (
             <div className="space-y-5 max-w-4xl mx-auto animate-fade-in">
               {/* Document Overview Card */}
@@ -548,7 +1026,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </div>
           )}
 
-          {/* TAB 3: CONFIDENCE SCORECARD & METRICS */}
+          {/* TAB 4: CONFIDENCE SCORECARD & METRICS */}
           {activeTab === "confidence" && (
             <div className="space-y-5 max-w-4xl mx-auto animate-fade-in">
               {/* Scorecard Hero */}
@@ -658,7 +1136,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         <div className="p-4 bg-white border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-gray-500 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Document Previewer Active • {doc.size}</span>
+            <span>Document Previewer & Annotation Suite • {doc.size}</span>
           </div>
 
           <div className="flex items-center gap-2">

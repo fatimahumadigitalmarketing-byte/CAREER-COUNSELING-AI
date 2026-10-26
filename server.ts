@@ -77,37 +77,54 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
+    const portfolioInfo = studentProfile.portfolioLinks
+      ? `• LinkedIn: ${studentProfile.portfolioLinks.linkedinUrl || "None"} • GitHub: ${studentProfile.portfolioLinks.githubUrl || "None"} • Portfolio: ${studentProfile.portfolioLinks.portfolioWebsiteUrl || "None"}`
+      : "None provided";
+
     // Build rich context for Gemini
     const profileSummary = `
-Student Academic Profile:
-- Educational Stage: ${studentProfile.stage || "Not specified"}
-- Stream / Group: ${studentProfile.stream || "General"}
+Student Academic Profile & Background:
+- Educational Stage / Status: ${studentProfile.stage || "Ongoing Degree / Student"}
+- Stream / Program: ${studentProfile.stream || "General / Arts / Humanities / BS / BA"}
+- Current Ongoing Degree / Background: ${studentProfile.currentEducation || studentProfile.stream || "Enrolled student (e.g., BA English / Intermediate / BS)"}
 - Strong Subjects: ${(studentProfile.strongSubjects || []).join(", ") || "General"}
 - Subjects to Avoid: ${(studentProfile.avoidSubjects || []).join(", ") || "None"}
-- Demonstrated Hobbies & Interests: ${(studentProfile.hobbies || []).join(", ") || "None specified"}
+- Demonstrated Hobbies & Leisure Interests: ${(studentProfile.hobbies || []).join(", ") || "None specified"}
 - Target Location / City: ${studentProfile.city || "Pakistan"}
+- Portfolio & Social Links: ${portfolioInfo}
 - Current Uploaded Credentials & Portfolio: ${
       documents.length > 0
         ? documents
             .map(
               (d: any) =>
-                `• ${d.detectedTitle || d.name} (Issued by: ${d.issuer || "Board/Uni"}, Year: ${d.year || "2024"}, Skills: ${(d.skills || []).join(", ")}, Confidence: ${d.confidenceScore || 94}%)`
+                `• ${d.detectedTitle || d.name} (Issued by: ${d.issuer || "Board/Uni"}, Year: ${d.year || "2024"}, Grade: ${d.gradeOrMarks || "Passed"}, Skills: ${(d.skills || []).join(", ")})`
             )
             .join("\n")
         : "No credentials uploaded yet"
     }
-- Top Recommended Path: ${studentProfile.topChoiceName || "Technical / Academic Track"}
+- Top Recommended Path: ${studentProfile.topChoiceName || "High-Income Skill Enhancement Track"}
 `;
 
-    const systemInstruction = `You are "Careerly AI", a warm, empathetic, highly knowledgeable, and friendly personal educational & career guidance counselor for students in Pakistan.
-Target Audience: Pakistani youth (Matric, FSc/ICS/FA Intermediate, University undergrads, and Vocational NAVTTC/TEVTA trainees).
+    const systemInstruction = `You are "Careerly AI", a focused, high-precision, personal educational and career guidance mentor for Pakistani students and young professionals.
 
-Core Principles:
-1. Persona & Tone: Speak warmly, encourage the student, be conversational and engaging. Never repeat the exact same static message or generic template. Directly answer the user's specific query with context!
-2. Grounded in Pakistan: Reference realistic Pakistani educational boards (BISE Lahore, Karachi, Federal Board FBISE, etc.), universities (NUST, FAST, COMSATS, UET, PIEAS, Punjab University, NED), technical bodies (NAVTTC, TEVTA, PBTE), and scholarships (Ehsaas, HEC Need-Based, PEEF).
-3. Realistic & Honest Advisory: Emphasize that outcomes require individual dedication and skills development. Do not guarantee fixed salaries or promise 100% automatic jobs or government cash stipends. Explain that stipends depend on institutional budgets and quota eligibility.
-4. Language: The user prefers ${language === "ur" ? "Urdu (اردو)" : "English"}. If Urdu, reply in natural, clear, fluent, and warm Urdu script (اردو). If English, reply in friendly, conversational English with structured bullet points and emojis.
-5. Action-Oriented: Provide clear, concrete next steps, learning resources, or study routines suited to their exact situation.`;
+CRITICAL INSTRUCTIONS & FORMATTING RULES:
+1. STRICTLY CONCISE & TO-THE-POINT (NO ESSAYS / NO LONG PARAGRAPHS):
+   - Never write long, winding essays or generic filler paragraphs.
+   - Limit total response length to 100 - 150 words maximum.
+   - Use crisp, high-impact bullet points and short 1-2 sentence insights.
+   - Immediately answer the exact question asked. No fluffy introductory or concluding generic pleasantries.
+
+2. SUPPORT ONGOING DEGREES & WORKING STUDENTS (DO NOT SUGGEST UNNECESSARY DEGREES):
+   - If a student is ALREADY enrolled in a degree (e.g., BA English, BS, FA, etc.) or currently doing an internship/job: DO NOT suggest they abandon it or start another 4-year degree from scratch!
+   - Instead, recommend targeted, high-ROI skill enhancement courses, micro-credentials (NAVTTC, DigiSkills, Coursera, Google certifications), and lucrative career pathways (e.g., for BA English: SEO Content Strategy, Copywriting, Technical Writing, Digital Marketing, Corporate Communications, UX Writing, Freelance Upwork/Fiverr consulting) to help them upskill and earn more immediately.
+
+3. GROUNDED IN THEIR DOCUMENTS, CERTIFICATES & PORTFOLIO:
+   - Actively reference their uploaded credentials, marks, certificates, and LinkedIn/GitHub links if available.
+   - Connect their personal hobbies and interests directly to practical earning pathways.
+
+4. LANGUAGE & TONE:
+   - Match the student's language: If Roman Urdu, respond in crisp, natural Roman Urdu. If Urdu script (اردو), respond in brief Urdu. If English, respond in clear professional English.
+   - Advisory notice: realistic Pakistani market guidance (HEC, NAVTTC, TEVTA); no false guaranteed salary claims.`;
 
     const contents: any[] = [];
 
@@ -128,22 +145,39 @@ Core Principles:
       role: "user",
       parts: [
         {
-          text: `Current Student Profile:\n${profileSummary}\n\nStudent's Question:\n"${message}"\n\nPlease answer conversationally, addressing my specific question with warmth and practical steps.`
+          text: `Student Academic Profile & Context:\n${profileSummary}\n\nStudent's Query:\n"${message}"\n\nPlease answer concisely in bullet points (under 120 words), directly addressing the query without long essays.`
         }
       ]
     });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents,
-      config: {
-        systemInstruction,
-        temperature: 0.7,
-        maxOutputTokens: 1200,
-      }
-    });
+    let replyText = "";
+    const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
+    let lastError: any = null;
 
-    const replyText = response.text || "";
+    for (const modelName of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.75,
+          }
+        });
+        if (response.text && response.text.trim().length > 15) {
+          replyText = response.text.trim();
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${modelName} failed or unavailable, trying next:`, err?.message?.slice(0, 80));
+      }
+    }
+
+    if (!replyText) {
+      throw lastError || new Error("No response generated from available models");
+    }
+
     return res.json({ reply: replyText });
   } catch (error: any) {
     console.error("Gemini Chat generation failed:", error?.message || error);
@@ -151,6 +185,72 @@ Core Principles:
       fallback: true,
       error: error?.message || "AI generation failed. Fallback to client counselor."
     });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 1b. NEURAL TEXT-TO-SPEECH (TTS) ROUTE (Gemini 3.8 Flash Lite TTS)
+// ---------------------------------------------------------------------------
+app.post("/api/tts", async (req, res) => {
+  try {
+    const { text, voice = "Kore" } = req.body;
+    if (!text || typeof text !== "string") {
+      return res.status(400).json({ error: "Text is required for TTS" });
+    }
+
+    if (!ai) {
+      return res.status(503).json({ fallback: true, error: "Gemini AI not initialized on server" });
+    }
+
+    // Clean text: strip markdown characters that interfere with speech
+    const cleanText = text
+      .replace(/[*#_~`>]/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/[•👉🛠️💼🚫📅👨‍👩‍👦💡📌⚡🇵🇰✓🎯🔍🏛️📊🌐]/g, "")
+      .slice(0, 1200)
+      .trim();
+
+    if (!cleanText) {
+      return res.status(400).json({ error: "No speakable text provided" });
+    }
+
+    const ttsResponse = await ai.models.generateContent({
+      model: "gemini-3.8-flash-lite-tts",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: cleanText,
+              speechMetadata: {
+                style: "Warm, empathetic, articulate personal career counselor voice",
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: voice || "Kore" },
+          },
+        },
+      },
+    });
+
+    const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) {
+      return res.status(500).json({ fallback: true, error: "No audio generated from model" });
+    }
+
+    return res.json({
+      audio: base64Audio,
+      mimeType: "audio/wav",
+    });
+  } catch (err: any) {
+    console.warn("Server TTS generation failed:", err?.message || err);
+    return res.status(500).json({ fallback: true, error: err?.message || "TTS generation failed" });
   }
 });
 
@@ -190,12 +290,38 @@ Return a strictly valid JSON object with the following fields:
   "hobbies": ["List of 3-4 aligned natural hobbies and interests"],
   "detectedHighlights": "2-3 sentences summarizing the candidate's achievements and verified marks on this credential",
   "matchedPrerequisites": ["List of 2-3 higher education or NAVTTC program prerequisites unlocked by this certificate"],
-  "confidenceScore": 95,
+  "annotations": [
+    {
+      "id": "ann-1",
+      "target": "Overall Distinction",
+      "type": "verified_badge",
+      "category": "academic_standing",
+      "note": "Verified Board/Commission record with distinction standing.",
+      "color": "emerald"
+    },
+    {
+      "id": "ann-2",
+      "target": "Core Subject Aptitude",
+      "type": "highlight",
+      "category": "eligibility_signal",
+      "note": "Top percentile marks unlock competitive admission criteria.",
+      "color": "blue"
+    },
+    {
+      "id": "ann-3",
+      "target": "Career Pathway Fit",
+      "type": "counselor_note",
+      "category": "strategic_recommendation",
+      "note": "Strong alignment with higher education and high-demand industry tracks.",
+      "color": "amber"
+    }
+  ],
+  "confidenceScore": 96,
   "confidenceBreakdown": {
-    "textExtraction": 97,
-    "issuerVerification": 95,
-    "prerequisitesMatch": 94,
-    "overallScore": 95
+    "textExtraction": 98,
+    "issuerVerification": 96,
+    "prerequisitesMatch": 95,
+    "overallScore": 96
   }
 }
 Output only the raw JSON.`;
@@ -219,24 +345,188 @@ Output only the raw JSON.`;
       }
     }
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: [{ role: "user", parts }],
-      config: {
-        responseMimeType: "application/json",
-        temperature: 0.2
-      }
-    });
+    let parsed: any = null;
+    const docCandidateModels = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
 
-    const parsed = JSON.parse(result.text || "{}");
+    for (const modelName of docCandidateModels) {
+      try {
+        const result = await ai.models.generateContent({
+          model: modelName,
+          contents: [{ role: "user", parts }],
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.2
+          }
+        });
+        if (result.text) {
+          parsed = JSON.parse(result.text.trim());
+          break;
+        }
+      } catch (err: any) {
+        console.warn(`Model ${modelName} doc analysis error:`, err?.message?.slice(0, 80));
+      }
+    }
+
+    if (!parsed || !parsed.detectedTitle) {
+      throw new Error("Unable to parse document via candidate models");
+    }
+
     return res.json({ success: true, data: parsed });
   } catch (error: any) {
     console.error("Gemini document analysis error:", error?.message || error);
     return res.status(500).json({
       fallback: true,
-      error: error?.message || "Document AI analysis failed. Using client-side extractor."
+      error: error?.message || "Document AI analysis failed. Using client-side precision extractor."
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// 2b. PAKISTANI CAREER TRENDS & SALARY RADAR ROUTE
+// ---------------------------------------------------------------------------
+app.get("/api/career-trends", (_req, res) => {
+  const trendsData = [
+    {
+      id: "cs_ai",
+      title: "Computer Science, AI & Software Engineering",
+      stream: "ICS / Pre-Engineering",
+      localDemandIndex: 94,
+      remoteExportIndex: 98,
+      avgSalaryPKR: {
+        entry: "75,000 - 140,000",
+        mid: "180,000 - 380,000",
+        senior: "450,000 - 1,200,000+"
+      },
+      yearlyGrowth: [
+        { year: 2024, index: 82 },
+        { year: 2025, index: 89 },
+        { year: 2026, index: 95 },
+        { year: 2027, index: 104 },
+        { year: 2028, index: 115 }
+      ],
+      risingSkills: ["Generative AI & LLMs", "Python / FastAPI", "TypeScript & Next.js", "Cloud & DevOps (Docker/K8s)", "Vector DBs"],
+      decliningSkills: ["Monolithic PHP", "Basic Manual QA", "Flash / Legacy Frameworks"],
+      topInstitutes: ["FAST-NUCES", "NUST SEECS", "COMSATS", "ITU Lahore", "GIKI"],
+      employmentShare: "38% Local IT Houses • 45% Remote Offshore Clients • 17% Public & FinTech"
+    },
+    {
+      id: "pre_med_clinical",
+      title: "Allied Healthcare, Nursing, DPT & Pharmacy",
+      stream: "FSc Pre-Medical",
+      localDemandIndex: 91,
+      remoteExportIndex: 86,
+      avgSalaryPKR: {
+        entry: "60,000 - 110,000",
+        mid: "130,000 - 240,000",
+        senior: "300,000 - 700,000+"
+      },
+      yearlyGrowth: [
+        { year: 2024, index: 78 },
+        { year: 2025, index: 84 },
+        { year: 2026, index: 91 },
+        { year: 2027, index: 99 },
+        { year: 2028, index: 108 }
+      ],
+      risingSkills: ["Critical Care ICU Nursing", "Musculoskeletal Physical Therapy", "Clinical Pharmacy Rounds", "Biotech Diagnostics", "NCLEX-RN UK/US Pathway"],
+      decliningSkills: ["Uncertified Dispensary Work", "Paper Patient Records"],
+      topInstitutes: ["Aga Khan University (AKU)", "King Edward Medical University", "Shifa Tameer-e-Millat", "Dow University"],
+      employmentShare: "52% Tertiary Hospitals • 28% Private Clinics • 20% Overseas Medical Visas"
+    },
+    {
+      id: "engineering_tech",
+      title: "Electrical, Renewable Energy & Robotics",
+      stream: "FSc Pre-Engineering / DAE",
+      localDemandIndex: 85,
+      remoteExportIndex: 78,
+      avgSalaryPKR: {
+        entry: "55,000 - 95,000",
+        mid: "120,000 - 220,000",
+        senior: "260,000 - 550,000"
+      },
+      yearlyGrowth: [
+        { year: 2024, index: 74 },
+        { year: 2025, index: 80 },
+        { year: 2026, index: 87 },
+        { year: 2027, index: 94 },
+        { year: 2028, index: 102 }
+      ],
+      risingSkills: ["Solar PV Net-Metering Systems", "Embedded Firmware (C++/STM32)", "Industrial PLC & SCADA", "Battery Storage (BESS)"],
+      decliningSkills: ["Traditional Coal Plant Engineering", "Manual Drafting / T-Square"],
+      topInstitutes: ["UET Lahore / Taxila", "NUST EME", "GIKI", "NED Karachi", "PIEAS"],
+      employmentShare: "40% Industrial Plants • 35% Solar EPC Companies • 25% WAPDA / DISCOs"
+    },
+    {
+      id: "business_fintech",
+      title: "FinTech, ACCA, Accounting & BBA",
+      stream: "I.Com / General / Any",
+      localDemandIndex: 88,
+      remoteExportIndex: 85,
+      avgSalaryPKR: {
+        entry: "50,000 - 90,000",
+        mid: "115,000 - 210,000",
+        senior: "250,000 - 650,000"
+      },
+      yearlyGrowth: [
+        { year: 2024, index: 76 },
+        { year: 2025, index: 82 },
+        { year: 2026, index: 89 },
+        { year: 2027, index: 96 },
+        { year: 2028, index: 105 }
+      ],
+      risingSkills: ["Power BI & Financial Modeling", "IFRS & Corporate Tax (FBR)", "E-Commerce Logistics", "Digital Wallets & Microfinance"],
+      decliningSkills: ["Manual Bookkeeping Registers", "Paper Voucher Audits"],
+      topInstitutes: ["IBA Karachi", "LUMS SDSB", "NUST NBS", "Hailey College PU"],
+      employmentShare: "48% Commercial Banks & FMCGs • 30% Big 4 Audit Firms • 22% Remote Bookkeeping"
+    },
+    {
+      id: "design_media",
+      title: "UI/UX Product Design & Visual Media",
+      stream: "FA / Arts / Humanities",
+      localDemandIndex: 84,
+      remoteExportIndex: 94,
+      avgSalaryPKR: {
+        entry: "50,000 - 95,000",
+        mid: "130,000 - 260,000",
+        senior: "320,000 - 800,000+"
+      },
+      yearlyGrowth: [
+        { year: 2024, index: 79 },
+        { year: 2025, index: 86 },
+        { year: 2026, index: 94 },
+        { year: 2027, index: 103 },
+        { year: 2028, index: 114 }
+      ],
+      risingSkills: ["Figma Design Systems", "UX Research & Prototyping", "Motion Graphics & After Effects", "3D Blender Assets", "Micro-Interactions"],
+      decliningSkills: ["Basic CorelDraw Print Design", "Static PSD Web Mockups"],
+      topInstitutes: ["NCA Lahore / Rawalpindi", "BNU Beaconhouse", "Habib University", "Karachi School of Art"],
+      employmentShare: "58% Remote Global Upwork/Fiverr • 32% Software Houses & Startups • 10% Local Ad Agencies"
+    },
+    {
+      id: "vocational_trades",
+      title: "Certified NAVTTC / TEVTA Technical Trades",
+      stream: "Matric Technical / NVQF",
+      localDemandIndex: 90,
+      remoteExportIndex: 88,
+      avgSalaryPKR: {
+        entry: "45,000 - 75,000",
+        mid: "85,000 - 150,000",
+        senior: "180,000 - 380,000"
+      },
+      yearlyGrowth: [
+        { year: 2024, index: 72 },
+        { year: 2025, index: 78 },
+        { year: 2026, index: 85 },
+        { year: 2027, index: 93 },
+        { year: 2028, index: 101 }
+      ],
+      risingSkills: ["Solar Inverter Setup", "Hybrid Auto Diagnostics", "SMD Mobile Circuit Repair", "Precision CNC Operation", "Gulf Certification"],
+      decliningSkills: ["Manual Carburetor Tuning", "Non-inverter AC Repair"],
+      topInstitutes: ["Government College of Technology", "NAVTTC CoEs", "TEVTA Institutes", "KVTC"],
+      employmentShare: "42% Middle East / Gulf Skilled Work • 38% Domestic Workshops • 20% Independent Contracting"
+    }
+  ];
+
+  return res.json({ success: true, trends: trendsData });
 });
 
 // ---------------------------------------------------------------------------
