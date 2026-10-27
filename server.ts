@@ -27,7 +27,7 @@ const argPort = portArgIndex !== -1 ? Number(process.argv[portArgIndex + 1]) : N
 const PORT = !isNaN(argPort) && argPort > 0 ? argPort : (Number(process.env.PORT) || 3000);
 
 // Add basic healthcheck endpoint
-app.get("/health", (_req, res) => {
+app.get(["/health", "/api/health"], (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
@@ -35,7 +35,7 @@ app.use(express.json({ limit: "35mb" }));
 app.use(express.urlencoded({ extended: true, limit: "35mb" }));
 
 // Initialize Gemini Client
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   try {
@@ -56,7 +56,7 @@ if (apiKey) {
 // ---------------------------------------------------------------------------
 // 1. AI COUNSELOR CHAT ROUTE (Dynamic, Context-Aware, Friendly & Personalized)
 // ---------------------------------------------------------------------------
-app.post("/api/chat", async (req, res) => {
+app.post(["/api/chat", "/chat"], async (req, res) => {
   try {
     const {
       message,
@@ -191,7 +191,7 @@ CRITICAL INSTRUCTIONS & FORMATTING RULES:
 // ---------------------------------------------------------------------------
 // 1b. NEURAL TEXT-TO-SPEECH (TTS) ROUTE (Gemini 3.8 Flash Lite TTS)
 // ---------------------------------------------------------------------------
-app.post("/api/tts", async (req, res) => {
+app.post(["/api/tts", "/tts"], async (req, res) => {
   try {
     const { text, voice = "Kore" } = req.body;
     if (!text || typeof text !== "string") {
@@ -257,7 +257,7 @@ app.post("/api/tts", async (req, res) => {
 // ---------------------------------------------------------------------------
 // 2. DOCUMENT AI EXTRACTION & CONFIDENCE SCORING ROUTE
 // ---------------------------------------------------------------------------
-app.post("/api/analyze-document", async (req, res) => {
+app.post(["/api/analyze-document", "/analyze-document"], async (req, res) => {
   try {
     const { fileName, fileType, textSnippet, base64Data } = req.body;
 
@@ -384,7 +384,7 @@ Output only the raw JSON.`;
 // ---------------------------------------------------------------------------
 // 2b. PAKISTANI CAREER TRENDS & SALARY RADAR ROUTE
 // ---------------------------------------------------------------------------
-app.get("/api/career-trends", (_req, res) => {
+app.get(["/api/career-trends", "/career-trends"], (_req, res) => {
   const trendsData = [
     {
       id: "cs_ai",

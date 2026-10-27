@@ -1834,12 +1834,6 @@ export default function App() {
         if (cleanSpoken) {
           setInputText(cleanSpoken);
           setHasTranscribedVoice(true);
-          const lastIdx = event.results.length - 1;
-          if (event.results[lastIdx] && event.results[lastIdx].isFinal) {
-            if (handleVoiceCommandDispatchRef.current) {
-              handleVoiceCommandDispatchRef.current(cleanSpoken);
-            }
-          }
         }
       };
 
@@ -3346,10 +3340,49 @@ Ask me anything about essential skills to master, realistic job opportunities, w
         }
       }
     } catch (e) {
-      // Server fetch aborted or offline - proceed with dynamic local counselor engine
+      // Server fetch aborted or offline - proceed with direct client or dynamic counselor engine
     }
 
-    // 2. If Server didn't supply reply, run Dynamic Conversational Counselor Engine
+    // 2. Direct Client-Side Gemini fallback if import.meta.env.VITE_GEMINI_API_KEY is configured
+    if (!botResponse) {
+      const clientApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (clientApiKey) {
+        try {
+          const clientRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${clientApiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: `You are Careerly AI, an empathetic academic and career counselor for Pakistani students.
+User Query: "${text}"
+Student context: Enrolled in ${qData.currentEducation || "BA English"}, ongoing job/internship: ${qData.ongoingJobOrInternship || "Active Intern / Freelancer"}, strong subjects: ${qData.strongSubjects.join(", ") || "English Literature"}, city: ${qData.city || "Pakistan"}.
+Attached documents: ${studentDocuments.map(d => `${d.name} (${d.type})`).join(", ") || "None"}.
+Rules:
+- Be concise, direct, and to the point (max 2-3 focused paragraphs or bullet points). No long essays.
+- Do NOT advise starting a new full degree if already doing BA English. Recommend actionable courses, certifications (e.g. Content Strategy, SEO, Copywriting, NAVTTC/DigiSkills), and career pathways to earn more.
+- Address the user's specific question.`
+                  }]
+                }]
+              })
+            }
+          );
+          if (clientRes.ok) {
+            const clientData = await clientRes.json();
+            const candidateText = clientData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (candidateText && candidateText.trim().length > 10) {
+              botResponse = candidateText.trim();
+            }
+          }
+        } catch (clientErr) {
+          // Fallback to local counselor engine
+        }
+      }
+    }
+
+    // 3. If Server didn't supply reply, run Dynamic Conversational Counselor Engine
     if (!botResponse) {
       botResponse = generateDynamicPersonalMentorResponse(text);
     }
@@ -6087,8 +6120,13 @@ Would you like more details on university merit cut-offs, entry test strategies,
                 <button
                   type="submit"
                   disabled={isTyping || !inputText.trim()}
-                  className="btn-yellow-action px-5 sm:px-6 py-3 rounded-lg text-sm md:text-base inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 font-bold"
+                  className={`px-5 sm:px-6 py-3 rounded-lg text-sm md:text-base inline-flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 font-bold ${
+                    hasTranscribedVoice
+                      ? "bg-emerald-700 hover:bg-emerald-800 text-white shadow-lg ring-2 ring-emerald-400"
+                      : "btn-yellow-action"
+                  }`}
                 >
+                  {hasTranscribedVoice && <CheckCircle2 className="w-4 h-4 text-yellow-300" />}
                   <span>
                     {lang === "ur"
                       ? hasTranscribedVoice
@@ -6098,7 +6136,7 @@ Would you like more details on university merit cut-offs, entry test strategies,
                       ? "Approve & Send"
                       : "Send"}
                   </span>
-                  <Send className="w-4 h-4" />
+                  {!hasTranscribedVoice && <Send className="w-4 h-4" />}
                 </button>
               </form>
 
