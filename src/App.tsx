@@ -2175,11 +2175,42 @@ export default function App() {
         }
       }
 
+      // Arts, English Literature, Content & Copywriting track matches
+      if (
+        docTitle.includes("english") ||
+        docTitle.includes("content") ||
+        docTitle.includes("writing") ||
+        docName.includes("english") ||
+        docName.includes("ba_") ||
+        (doc.detectedSubjects || []).some((sub) => sub.toLowerCase().includes("english") || sub.toLowerCase().includes("literature"))
+      ) {
+        if (
+          prog.sector.includes("Media") ||
+          prog.sector.includes("Communications") ||
+          prog.name.includes("Writing") ||
+          prog.name.includes("Copywriting") ||
+          prog.name.includes("Content")
+        ) {
+          score += 26;
+          matchedDocTitle = doc.detectedTitle;
+        }
+      }
+
       // High Confidence Evidentiary Boost
       if (doc.confidenceScore >= 90) {
         score += 4;
       }
     });
+
+    // Ongoing Degree & BA English Upskilling Prioritization (No Degree Restart)
+    if (
+      (qData.currentEducation && qData.currentEducation.toLowerCase().includes("english")) ||
+      (qData.ongoingJobOrInternship && qData.ongoingJobOrInternship.toLowerCase().includes("content"))
+    ) {
+      if (prog.id === 25 || prog.id === 26 || prog.id === 27) {
+        score += 35; // Strongly rank practical courses over restarting a 4-year degree
+      }
+    }
 
     // Questionnaire Stage & Stream alignment
     if (qData.stream) {
